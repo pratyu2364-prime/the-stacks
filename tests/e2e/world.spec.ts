@@ -30,10 +30,9 @@ test('a shelved book appears on a shelf in the world', async ({ page }) => {
   await page.getByTestId('add-confirm').click();
   await expect(page.getByTestId('library')).toContainText('Cosmos');
 
-  // Reading books lie on the desk; finishing it puts it on a shelf.
-  await page.getByTestId('library').getByText('Cosmos').click();
-  await page.getByRole('button', { name: 'finished' }).click();
-
+  // Still 'reading', deliberately: a library you cannot see until you finish
+  // something is not a library. The book stands on its shelf from the moment
+  // you own it, and also lies on the desk.
   await page.goto('library?lite');
   await expect.poll(async () => page.evaluate(() => window.__stacks?.titles ?? []), { timeout: 30_000 })
     .toContain('Cosmos');

@@ -68,7 +68,7 @@ export function createWorld(canvas: HTMLCanvasElement, model: WorldModel, lite =
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   if (!lite) {
-    composer.addPass(new UnrealBloomPass(new Vector2(w0, h0), 0.55, 0.72, 0.68));
+    composer.addPass(new UnrealBloomPass(new Vector2(w0, h0), 0.32, 0.6, 0.92));
     composer.addPass(new OutputPass());
   }
 

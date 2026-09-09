@@ -51,12 +51,22 @@ describe('buildWorldModel', () => {
     expect(model.rooms.map((r) => r.genre)).toEqual(['fiction', 'philosophy']);
   });
 
-  it('puts currently-reading books on the desk, not the shelf', () => {
+  it('puts a book you are reading on the desk and on its shelf', () => {
     const books = [book('b1', 'In Progress')];
     const ubs = [userBook('u1', 'b1', { status: 'reading', finishedAt: null })];
     const model = buildWorldModel(ubs, books, [], TODAY);
     expect(model.reading.map((b) => b.title)).toEqual(['In Progress']);
+    // One owned book is enough to open a room: otherwise a new reader walks
+    // into a library with no shelves anywhere, which is what shipped first.
+    expect(model.rooms.map((r) => r.genre)).toEqual(['fiction']);
+    expect(model.rooms[0].shelves[0].map((b) => b.title)).toEqual(['In Progress']);
+  });
+
+  it('leaves want-to-read books out of the world entirely', () => {
+    const ubs = [userBook('u1', 'b1', { status: 'want', finishedAt: null })];
+    const model = buildWorldModel(ubs, [book('b1', 'Someday')], [], TODAY);
     expect(model.rooms).toEqual([]);
+    expect(model.reading).toEqual([]);
   });
 
   it('gives every room the full board count', () => {

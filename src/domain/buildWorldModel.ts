@@ -47,12 +47,16 @@ export function buildWorldModel(
 
   const rooms: WorldModel['rooms'] = [];
   for (const genre of GENRES) {
+    // Everything you own stands in its room, including what you are reading —
+    // a library you cannot see until you finish something is not a library.
+    // The desk shows current reads as well; the shelf is where they live.
     const inGenre = resolved
-      .filter(({ userBook }) => userBook.genre === genre && userBook.status !== 'reading' && userBook.status !== 'want')
+      .filter(({ userBook }) => userBook.genre === genre && userBook.status !== 'want')
       .sort((a, b) => (a.userBook.finishedAt ?? a.userBook.addedAt).localeCompare(b.userBook.finishedAt ?? b.userBook.addedAt))
       .map(({ userBook, book }) => shelved(userBook, book));
 
     if (inGenre.length === 0) continue; // no books, no room: the arch stays bricked up
+
     rooms.push({ genre: genre as Genre, shelves: packShelves(inGenre, BOARDS_PER_ROOM, BOARD_SPAN).map((b) => b.books) });
   }
 
