@@ -41,19 +41,50 @@ function toHit(doc: RawDoc): SearchHit | null {
   };
 }
 
+async function fetchDocs(params: string, signal?: AbortSignal): Promise<RawDoc[]> {
+  const response = await fetch(`${ENDPOINT}?${params}&fields=${FIELDS}`, { signal });
+  if (!response.ok) throw new Error(`Open Library answered ${response.status}`);
+  const body = (await response.json()) as { docs?: RawDoc[] };
+  return body.docs ?? [];
+}
+
 /**
  * Search Open Library. No key, no quota, CORS-open, so the browser asks directly.
- * Results are transient — nothing is written until the reader adds a book, and
- * after that the cached row is what the app reads.
+ *
+ * Two searches, not one. A plain `q=` is a loose relevance match: searching an
+ * exact title returns dozens of unrelated books ahead of the right one, or
+ * instead of it. So ask the title index first and put those hits at the top,
+ * then append the loose results for the times someone is searching a half-
+ * remembered phrase or an author. Deduplicated by work key, order preserved.
+ *
+ * Either request may fail on its own; only both failing is an error worth
+ * showing, because one good list still answers the question.
  */
-export async function searchBooks(query: string, signal?: AbortSignal, limit = 12): Promise<SearchHit[]> {
+export async function searchBooks(query: string, signal?: AbortSignal, limit = 20): Promise<SearchHit[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
+  const encoded = encodeURIComponent(trimmed);
 
-  const url = `${ENDPOINT}?q=${encodeURIComponent(trimmed)}&limit=${limit}&fields=${FIELDS}`;
-  const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`Open Library answered ${response.status}`);
+  const [byTitle, loose] = await Promise.allSettled([
+    fetchDocs(`title=${encoded}&limit=${limit}`, signal),
+    fetchDocs(`q=${encoded}&limit=${limit}`, signal),
+  ]);
 
-  const body = (await response.json()) as { docs?: RawDoc[] };
-  return (body.docs ?? []).map(toHit).filter((hit): hit is SearchHit => hit !== null);
+  if (byTitle.status === 'rejected' && loose.status === 'rejected') throw byTitle.reason;
+
+  const ordered = [
+    ...(byTitle.status === 'fulfilled' ? byTitle.value : []),
+    ...(loose.status === 'fulfilled' ? loose.value : []),
+  ];
+
+  const seen = new Set<string>();
+  const hits: SearchHit[] = [];
+  for (const doc of ordered) {
+    const hit = toHit(doc);
+    if (!hit || seen.has(hit.olWorkKey)) continue;
+    seen.add(hit.olWorkKey);
+    hits.push(hit);
+    if (hits.length >= limit) break;
+  }
+  return hits;
 }

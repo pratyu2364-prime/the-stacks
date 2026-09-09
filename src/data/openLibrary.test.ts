@@ -20,6 +20,14 @@ const PAYLOAD = {
 const respond = (body: unknown, ok = true, status = 200) =>
   vi.fn().mockResolvedValue({ ok, status, json: async () => body });
 
+/** Answer the title search and the loose search differently, by URL. */
+const respondByUrl = (byTitle: unknown, loose: unknown) =>
+  vi.fn().mockImplementation((url: string) => {
+    const body = url.includes('title=') ? byTitle : loose;
+    const failing = body === null;
+    return Promise.resolve({ ok: !failing, status: failing ? 500 : 200, json: async () => body });
+  });
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('searchBooks', () => {
@@ -48,9 +56,34 @@ describe('searchBooks', () => {
     expect(hits.some((h) => h.title === 'No key at all')).toBe(false);
   });
 
-  it('throws on a 500 so the caller can offer manual entry', async () => {
+  it('throws only when both searches fail', async () => {
     vi.stubGlobal('fetch', respond({}, false, 500));
     await expect(searchBooks('down')).rejects.toThrow('500');
+  });
+
+  it('still answers when only the title search fails', async () => {
+    vi.stubGlobal('fetch', respondByUrl(null, PAYLOAD));
+    const hits = await searchBooks('karamazov');
+    expect(hits).toHaveLength(2);
+  });
+
+  it('puts title matches ahead of loose relevance matches', async () => {
+    const titled = { docs: [{ key: '/works/OLTITLE', title: 'Exact Title', author_name: ['Right'], subject: ['Fiction'] }] };
+    vi.stubGlobal('fetch', respondByUrl(titled, PAYLOAD));
+    const hits = await searchBooks('exact title');
+    expect(hits[0].title).toBe('Exact Title');
+    expect(hits.map((h) => h.title)).toContain('The Brothers Karamazov');
+  });
+
+  it('shows one row per work when both searches return it', async () => {
+    vi.stubGlobal('fetch', respondByUrl(PAYLOAD, PAYLOAD));
+    const hits = await searchBooks('karamazov');
+    expect(hits.filter((h) => h.olWorkKey === '/works/OL27448W')).toHaveLength(1);
+  });
+
+  it('returns nothing for a book Open Library has never heard of', async () => {
+    vi.stubGlobal('fetch', respondByUrl({ docs: [] }, { docs: [] }));
+    expect(await searchBooks('the wanderer who owned the world')).toEqual([]);
   });
 
   it('handles an empty result set', async () => {

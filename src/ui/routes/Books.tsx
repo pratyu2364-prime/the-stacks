@@ -83,8 +83,20 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [failed, setFailed] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [pending, setPending] = useState<SearchHit | null>(null);
   const abort = useRef<AbortController | null>(null);
+
+  const byHand = () =>
+    setPending({
+      olWorkKey: `manual:${crypto.randomUUID()}`,
+      title: query.trim(),
+      author: '',
+      pages: null,
+      coverId: null,
+      subjects: [],
+      genre: 'fiction',
+    });
 
   useEffect(() => {
     abort.current?.abort();
@@ -94,14 +106,18 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
     }
     const controller = new AbortController();
     abort.current = controller;
+    setSearching(true);
     const timer = window.setTimeout(() => {
       searchBooks(query, controller.signal)
         .then((results) => {
           setHits(results);
           setFailed(false);
+          setSearching(false);
         })
         .catch((e: Error) => {
-          if (e.name !== 'AbortError') setFailed(true);
+          if (e.name === 'AbortError') return;
+          setFailed(true);
+          setSearching(false);
         });
     }, 350);
     return () => {
@@ -121,16 +137,18 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
         className="w-full bg-black/40 border border-oak/60 rounded px-3 py-2 text-sm"
       />
 
-      {failed && (
+      {/*
+        Open Library is 40M editions and still does not have everything. When it
+        answers with nothing, or with the wrong things, the way out must be on
+        screen — not hidden behind their API failing.
+      */}
+      {failed && <p className="mt-3 text-xs text-red-300">Open Library did not answer.</p>}
+
+      {query.trim().length >= 2 && !searching && (
         <p className="mt-3 text-xs text-dust">
-          Open Library did not answer.{' '}
-          <button
-            className="text-lamp underline"
-            onClick={() =>
-              setPending({ olWorkKey: `manual:${Date.now()}`, title: query, author: '', pages: null, coverId: null, subjects: [], genre: 'fiction' })
-            }
-          >
-            enter it by hand
+          {hits.length === 0 ? 'Nothing found. ' : 'Not the book you meant? '}
+          <button data-testid="manual-entry" className="text-lamp underline" onClick={byHand}>
+            add “{query.trim()}” by hand
           </button>
         </p>
       )}
