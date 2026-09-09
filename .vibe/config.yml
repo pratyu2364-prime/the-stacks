@@ -1,0 +1,21 @@
+# The Stacks — vibe-loop config (read by the `ship` + `align` skills)
+
+intervention: autopilot          # self-merge on green CI, no approvals
+reviewer: claude
+workers: [opencode/big-pickle, hermes/grok]
+
+commands:
+  lint: "pnpm -s lint"
+  test: "pnpm -s test"
+  build: "pnpm -s build"
+
+gates:
+  approve_plan: false
+  approve_merge: false
+  approve_deploy: false
+
+limits:
+  retry_cap: 2
+  max_tasks_per_run: 12
+
+paused: false
