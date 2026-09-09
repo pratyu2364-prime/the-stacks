@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "The Stacks",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,11 @@
     },
     "extra": {
       "supabaseUrl": "https://ntgdyhsezcfiakujbgdd.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Z2R5aHNlemNmaWFrdWpiZ2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTM0ODIsImV4cCI6MjEwNDUyOTQ4Mn0.BbADgSAXyRTeXxyj69VoaWkuy52p2fu0NJe4hGH55FM"
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Z2R5aHNlemNmaWFrdWpiZ2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTM0ODIsImV4cCI6MjEwNDUyOTQ4Mn0.BbADgSAXyRTeXxyj69VoaWkuy52p2fu0NJe4hGH55FM",
+      "router": {},
+      "eas": {
+        "projectId": "1227c81b-21ed-4e80-a3df-52cf06b6276d"
+      }
     },
     "scheme": "thestacks",
     "android": {
@@ -32,6 +36,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-sqlite"
-    ]
+    ],
+    "owner": "pratyu2364"
   }
 }
