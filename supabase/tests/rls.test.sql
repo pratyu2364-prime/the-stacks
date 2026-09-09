@@ -20,7 +20,8 @@ values ('33333333-3333-3333-3333-333333333333', '/works/OL1W', 'Meditations', 'M
 
 -- ---------------------------------------------------------------- as Ada
 set local role authenticated;
-set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+select set_config('request.jwt.claims',
+  '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 
 select lives_ok(
   $$insert into public.user_books (book_id, status, genre)
@@ -40,19 +41,24 @@ select throws_ok(
   $$insert into public.user_books (user_id, book_id, status, genre)
     values ('22222222-2222-2222-2222-222222222222',
             '33333333-3333-3333-3333-333333333333', 'reading', 'fiction')$$,
-  '42501', null, 'a reader cannot shelve a book into someone else''s library');
+  '42501', 'a reader cannot shelve a book into someone else''s library');
 
 select lives_ok(
   $$insert into public.books (ol_work_key, title, author)
     values ('/works/OL2W', 'Cosmos', 'Sagan')$$,
   'a reader can add to the shared book cache');
 
-select throws_ok(
-  $$update public.books set title = 'Vandalised' where ol_work_key = '/works/OL1W'$$,
-  '42501', null, 'but cannot edit what someone else cached');
+-- No update policy exists, so the row is simply invisible to the update and
+-- nothing is changed. Postgres raises nothing here; the proof is the title.
+update public.books set title = 'Vandalised' where ol_work_key = '/works/OL1W';
+
+select is(
+  (select title from public.books where ol_work_key = '/works/OL1W'),
+  'Meditations', 'but cannot edit what someone else cached');
 
 -- ---------------------------------------------------------------- as Brian
-set local request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}';
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 
 select is((select count(*)::int from public.user_books), 0, 'another reader sees none of her books');
 select is((select count(*)::int from public.sessions),   0, 'and none of her sessions');
@@ -61,7 +67,7 @@ select is((select count(*)::int from public.books),      2, 'but the whole share
 
 -- ---------------------------------------------------------------- signed out
 set local role anon;
-set local request.jwt.claims = null;
+select set_config('request.jwt.claims', null, true);
 
 select is((select count(*)::int from public.user_books), 0, 'a stranger sees no libraries');
 select is((select count(*)::int from public.books),      2, 'but may still browse the cache');
