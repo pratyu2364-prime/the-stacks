@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { isConfigured } from '../../data';
+import { NotConfigured } from '../components/NotConfigured';
 
 export function SignIn({ mode }: { mode: 'in' | 'up' }) {
   const { session, signIn, signUp } = useAuth();
@@ -11,6 +13,7 @@ export function SignIn({ mode }: { mode: 'in' | 'up' }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  if (!isConfigured) return <NotConfigured />;
   if (session) return <Navigate to={location.state?.from ?? '/dashboard'} replace />;
 
   async function submit(event: FormEvent) {

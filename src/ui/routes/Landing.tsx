@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { isConfigured } from '../../data';
 
 export function Landing() {
   return (
@@ -10,6 +11,11 @@ export function Landing() {
         stands on a shelf, with its title on the spine, in the room for its subject.
         An empty shelf is an honest report on your month.
       </p>
+      {!isConfigured && (
+        <p className="mb-6 text-xs text-lamp/80 border border-lamp/30 rounded px-3 py-2">
+          demo build · accounts are not open yet
+        </p>
+      )}
       <div className="flex gap-3">
         <Link
           to="/signup"
