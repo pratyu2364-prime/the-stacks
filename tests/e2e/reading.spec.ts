@@ -88,6 +88,29 @@ test('the dashboard counts the sitting that was just logged', async ({ page }) =
   await expect(page.getByTestId('reading-now')).toContainText('The Brothers Karamazov');
 });
 
+test('a book Open Library has never heard of can still be shelved', async ({ page }) => {
+  // Their index is large and still incomplete; the way out cannot depend on
+  // their API failing, because here it succeeds and simply knows nothing.
+  await page.route(OPEN_LIBRARY, (route) => route.fulfill({ json: { docs: [] } }));
+  await signUp(page);
+
+  await page.goto('books');
+  await page.getByTestId('search').fill('The Wanderer Who Owned The World');
+  await page.getByTestId('manual-entry').click();
+
+  await expect(page.getByTestId('add-title')).toHaveValue('The Wanderer Who Owned The World');
+  await page.getByTestId('add-author').fill('Sri M');
+  await page.getByTestId('add-pages').fill('264');
+  await page.getByTestId('add-genre').selectOption('philosophy');
+  await page.getByTestId('add-confirm').click();
+
+  await expect(page.getByTestId('library')).toContainText('The Wanderer Who Owned The World');
+
+  await page.goto('library?lite');
+  await expect.poll(async () => page.evaluate(() => window.__stacks?.titles ?? []), { timeout: 30_000 })
+    .toContain('The Wanderer Who Owned The World');
+});
+
 test('a signed-out reader is sent to the door', async ({ page }) => {
   await page.goto('books');
   await expect(page).toHaveURL(/login/);
