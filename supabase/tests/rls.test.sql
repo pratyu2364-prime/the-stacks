@@ -41,7 +41,8 @@ select throws_ok(
   $$insert into public.user_books (user_id, book_id, status, genre)
     values ('22222222-2222-2222-2222-222222222222',
             '33333333-3333-3333-3333-333333333333', 'reading', 'fiction')$$,
-  '42501', 'a reader cannot shelve a book into someone else''s library');
+  '42501', 'new row violates row-level security policy for table "user_books"',
+  'a reader cannot shelve a book into someone else''s library');
 
 select lives_ok(
   $$insert into public.books (ol_work_key, title, author)
