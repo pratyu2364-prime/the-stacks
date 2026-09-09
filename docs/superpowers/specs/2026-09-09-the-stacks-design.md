@@ -258,8 +258,9 @@ override always wins — the table only has to be right often enough to not anno
 - **Genre rooms** — one hex per genre, reached down a lit corridor. Five shelved
   walls × five boards. Capacity ≈ 350 books per room; past that the room grows a
   second hex behind it (V2 concern, but the model must not preclude it).
-- **The Stacks** — dim, untitled instanced stock on the walls of a dead-end
-  chamber past each genre room. Scenery in V1; interactive in V2.
+- **The Stacks** — dim, untitled instanced stock lining both walls of the
+  corridor between the Reading Room and each genre room, so you walk through the
+  unclaimed catalogue to reach your own. Scenery in V1; interactive in V2.
 
 ### Rules that make it readable without UI
 
