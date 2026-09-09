@@ -1,11 +1,19 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import React, { useMemo } from 'react';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLibrary } from '../../src/library';
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { books, userBooks, sessions, loading } = useLibrary();
+  const { books, userBooks, sessions, loading, reload } = useLibrary();
+
+  // The log sheet writes through its own copy of the library, so this screen
+  // refetches on focus to show the sitting that was just logged.
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const userBook = userBooks.find((ub) => ub.id === id);
   const book = userBook ? books.find((b) => b.id === userBook.bookId) : undefined;

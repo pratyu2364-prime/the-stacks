@@ -1,5 +1,5 @@
-import { router, Stack } from 'expo-router';
-import React, { useMemo } from 'react';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -17,6 +17,15 @@ type ShelfSection = { title: string; data: UserBook[] };
 
 export default function ShelfScreen() {
   const { books, userBooks, streak, loading, error, reload } = useLibrary();
+
+  // Shelving a book or logging a sitting happens on another screen holding its
+  // own copy of the library, so this one refetches whenever it comes back into
+  // view rather than showing a shelf that is quietly out of date.
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const sections = useMemo<ShelfSection[]>(
     () =>

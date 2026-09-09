@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { loadLibrary } from '@stacks/data';
-import { currentStreak, type Book, type Session, type UserBook } from '@stacks/domain';
+import { addBook as dataAddBook, loadLibrary, type NewBook, type SearchHit } from '@stacks/data';
+import { currentStreak, type Book, type BookStatus, type Session, type UserBook } from '@stacks/domain';
 import { supabase } from './supabase';
 
 type LibraryValue = {
@@ -11,6 +11,7 @@ type LibraryValue = {
   loading: boolean;
   error: string | null;
   reload(): Promise<void>;
+  addBook(hit: SearchHit, status?: BookStatus): Promise<void>;
 };
 
 export function useLibrary(): LibraryValue {
@@ -38,6 +39,22 @@ export function useLibrary(): LibraryValue {
     void reload();
   }, [reload]);
 
+  const shelvedAddBook = useCallback(
+    async (hit: SearchHit, status: BookStatus = 'reading') => {
+      const book: NewBook = {
+        olWorkKey: hit.olWorkKey,
+        title: hit.title,
+        author: hit.author,
+        pages: hit.pages,
+        coverId: hit.coverId,
+        subjects: hit.subjects,
+      };
+      await dataAddBook(supabase, book, hit.genre, status);
+      await reload();
+    },
+    [reload],
+  );
+
   return {
     books,
     userBooks,
@@ -46,5 +63,6 @@ export function useLibrary(): LibraryValue {
     loading,
     error,
     reload,
+    addBook: shelvedAddBook,
   };
 }
