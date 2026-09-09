@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
+    "@expo/metro-runtime": "~57.0.15",
     "@stacks/data": "workspace:*",
     "@stacks/domain": "workspace:*",
     "@supabase/supabase-js": "^2.116.0",

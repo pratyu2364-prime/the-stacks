@@ -26,6 +26,10 @@ jobs:
       - run: pnpm -r lint
       - run: pnpm -r test
       - run: pnpm --filter @stacks/web build
+      # The unit tests never bundle, so a module the phone cannot resolve at
+      # runtime passed every gate and only failed on EAS. Bundling here catches
+      # that in CI instead of in a cloud build queue.
+      - run: pnpm --filter @stacks/mobile exec expo export --platform android
 
   database:
     runs-on: ubuntu-latest
