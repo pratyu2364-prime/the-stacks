@@ -10,7 +10,8 @@ import {
   type Session,
   type UserBook,
 } from '@stacks/domain';
-import { loadLibrary } from '../../data';
+import { loadLibrary } from '@stacks/data';
+import { supabase } from '../../supabase';
 import { Shell } from '../components/Shell';
 import { MonthBars } from '../components/MonthBars';
 
@@ -19,7 +20,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadLibrary().then(setData).catch((e: Error) => setError(e.message));
+    loadLibrary(supabase).then(setData).catch((e: Error) => setError(e.message));
   }, []);
 
   const stats = useMemo(() => {

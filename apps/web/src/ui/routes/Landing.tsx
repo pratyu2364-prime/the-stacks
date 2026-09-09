@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { isConfigured } from '../../data';
+import { isConfigured } from '../../supabase';
 
 export function Landing() {
   return (

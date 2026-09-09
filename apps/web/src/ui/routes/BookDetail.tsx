@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import type { Book, Session, UserBook } from '@stacks/domain';
 import { dayKey } from '@stacks/domain';
-import { coverUrl, loadLibrary, logSession, setStatus } from '../../data';
+import { coverUrl, loadLibrary, logSession, setStatus } from '@stacks/data';
+import { supabase } from '../../supabase';
 import { Shell } from '../components/Shell';
 
 export function BookDetail() {
@@ -13,7 +14,7 @@ export function BookDetail() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const data = await loadLibrary();
+    const data = await loadLibrary(supabase);
     const ub = data.userBooks.find((u) => u.id === id) ?? null;
     setUserBook(ub);
     setBook(ub ? data.books.find((b) => b.id === ub.bookId) ?? null : null);
@@ -54,7 +55,7 @@ export function BookDetail() {
             {(['reading', 'finished', 'abandoned'] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => void setStatus(userBook.id, s).then(refresh)}
+                onClick={() => void setStatus(supabase, userBook.id, s).then(refresh)}
                 className={`px-2.5 py-1 rounded border text-[11px] uppercase tracking-widest ${
                   userBook.status === s ? 'border-lamp text-lamp' : 'border-oak/50 text-dust'
                 }`}
@@ -110,7 +111,7 @@ function LogSession({ userBookId, lastPage, onLogged }: { userBookId: string; la
     setBusy(true);
     setError(null);
     try {
-      await logSession({
+      await logSession(supabase, {
         userBookId,
         readOn,
         pageStart: pageStart === '' ? null : Number(pageStart),

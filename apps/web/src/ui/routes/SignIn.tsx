@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
-import { isConfigured } from '../../data';
+import { isConfigured } from '../../supabase';
 import { NotConfigured } from '../components/NotConfigured';
 
 export function SignIn({ mode }: { mode: 'in' | 'up' }) {

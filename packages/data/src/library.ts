@@ -1,5 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Book, Genre, Session, UserBook } from '@stacks/domain';
-import { supabase } from './client';
 
 type BookRow = {
   id: string;
@@ -70,13 +70,15 @@ function unwrap<T>(result: { data: T | null; error: { message: string } | null }
 }
 
 /** Everything the dashboard and the world need, in three round trips. */
-export async function loadLibrary(): Promise<{ books: Book[]; userBooks: UserBook[]; sessions: Session[] }> {
-  const userBookRows = unwrap(await supabase.from('user_books').select('*').order('added_at'));
+export async function loadLibrary(
+  client: SupabaseClient,
+): Promise<{ books: Book[]; userBooks: UserBook[]; sessions: Session[] }> {
+  const userBookRows = unwrap(await client.from('user_books').select('*').order('added_at'));
   const bookIds = [...new Set((userBookRows as UserBookRow[]).map((r) => r.book_id))];
   const bookRows = bookIds.length
-    ? unwrap(await supabase.from('books').select('*').in('id', bookIds))
+    ? unwrap(await client.from('books').select('*').in('id', bookIds))
     : [];
-  const sessionRows = unwrap(await supabase.from('sessions').select('*').order('read_on'));
+  const sessionRows = unwrap(await client.from('sessions').select('*').order('read_on'));
 
   return {
     books: (bookRows as BookRow[]).map(toBook),
@@ -102,12 +104,12 @@ export type NewBook = {
  * what someone else cached. So: look first, insert only if absent, tolerate a
  * duplicate insert from a racing reader, then read back whichever row won.
  */
-async function cacheBook(book: NewBook): Promise<BookRow> {
-  const existing = await supabase.from('books').select('*').eq('ol_work_key', book.olWorkKey).maybeSingle();
+async function cacheBook(client: SupabaseClient, book: NewBook): Promise<BookRow> {
+  const existing = await client.from('books').select('*').eq('ol_work_key', book.olWorkKey).maybeSingle();
   if (existing.error) throw new Error(existing.error.message);
   if (existing.data) return existing.data as BookRow;
 
-  const inserted = await supabase
+  const inserted = await client
     .from('books')
     .insert({
       ol_work_key: book.olWorkKey,
@@ -126,15 +128,20 @@ async function cacheBook(book: NewBook): Promise<BookRow> {
   const isDuplicate = inserted.error?.code === '23505';
   if (inserted.error && !isDuplicate) throw new Error(inserted.error.message);
 
-  const settled = await supabase.from('books').select('*').eq('ol_work_key', book.olWorkKey).single();
+  const settled = await client.from('books').select('*').eq('ol_work_key', book.olWorkKey).single();
   if (settled.error) throw new Error(settled.error.message);
   return settled.data as BookRow;
 }
 
-export async function addBook(book: NewBook, genre: Genre, status: UserBook['status'] = 'reading'): Promise<UserBook> {
-  const cached = await cacheBook(book);
+export async function addBook(
+  client: SupabaseClient,
+  book: NewBook,
+  genre: Genre,
+  status: UserBook['status'] = 'reading',
+): Promise<UserBook> {
+  const cached = await cacheBook(client, book);
   const shelved = unwrap(
-    await supabase.from('user_books').insert({ book_id: cached.id, status, genre }).select().single(),
+    await client.from('user_books').insert({ book_id: cached.id, status, genre }).select().single(),
   ) as UserBookRow;
   return toUserBook(shelved);
 }
@@ -149,9 +156,9 @@ export type NewSession = {
   note: string | null;
 };
 
-export async function logSession(session: NewSession): Promise<Session> {
+export async function logSession(client: SupabaseClient, session: NewSession): Promise<Session> {
   const row = unwrap(
-    await supabase
+    await client
       .from('sessions')
       .insert({
         user_book_id: session.userBookId,
@@ -168,8 +175,12 @@ export async function logSession(session: NewSession): Promise<Session> {
   return toSession(row);
 }
 
-export async function setStatus(userBookId: string, status: UserBook['status']): Promise<void> {
+export async function setStatus(
+  client: SupabaseClient,
+  userBookId: string,
+  status: UserBook['status'],
+): Promise<void> {
   const finished_at = status === 'finished' ? new Date().toISOString() : null;
-  const { error } = await supabase.from('user_books').update({ status, finished_at }).eq('id', userBookId);
+  const { error } = await client.from('user_books').update({ status, finished_at }).eq('id', userBookId);
   if (error) throw new Error(error.message);
 }

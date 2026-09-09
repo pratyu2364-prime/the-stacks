@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { buildWorldModel, type WorldModel } from '@stacks/domain';
-import { loadLibrary } from '../../data';
+import { loadLibrary } from '@stacks/data';
 import { createWorld, fixtureModel } from '../../world';
 import { useAuth } from '../auth';
+import { supabase } from '../../supabase';
 
 /** Owns a canvas and nothing else. React never enters the render loop. */
 export function Library() {
@@ -20,7 +21,7 @@ export function Library() {
       setModel(fixtureModel());
       return () => { cancelled = true; };
     }
-    loadLibrary()
+    loadLibrary(supabase)
       .then(({ books, userBooks, sessions }) => {
         if (!cancelled) setModel(buildWorldModel(userBooks, books, sessions, new Date()));
       })

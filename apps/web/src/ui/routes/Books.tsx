@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GENRES, type Book, type Genre, type UserBook } from '@stacks/domain';
-import { addBook, coverUrl, loadLibrary, searchBooks, type SearchHit } from '../../data';
+import { addBook, coverUrl, loadLibrary, searchBooks, type SearchHit } from '@stacks/data';
+import { supabase } from '../../supabase';
 import { Shell } from '../components/Shell';
 
 type Row = { userBook: UserBook; book: Book };
@@ -13,7 +14,7 @@ export function Books() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const { books, userBooks } = await loadLibrary();
+    const { books, userBooks } = await loadLibrary(supabase);
     const byId = new Map(books.map((b) => [b.id, b]));
     setRows(userBooks.flatMap((ub) => {
       const book = byId.get(ub.bookId);
@@ -197,6 +198,7 @@ function ConfirmAdd({ hit, onClose, onAdded }: { hit: SearchHit; onClose: () => 
     setError(null);
     try {
       await addBook(
+        supabase,
         { olWorkKey: hit.olWorkKey, title, author, pages: pages === '' ? null : Number(pages), coverId: hit.coverId, subjects: hit.subjects },
         genre,
       );
