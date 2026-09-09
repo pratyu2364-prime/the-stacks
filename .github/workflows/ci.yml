@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
       # Applies every migration to a throwaway local stack, then proves the RLS
       # policies with pgTAP. A policy regression fails the PR, not production.
       - run: supabase db start
@@ -54,7 +54,7 @@ jobs:
           cache: pnpm
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       # A throwaway Supabase stack, then the real bundle against it. The test

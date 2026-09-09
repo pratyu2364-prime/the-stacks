@@ -95,33 +95,47 @@ export type NewBook = {
 };
 
 /**
- * Cache the book for everyone, then shelve it for this reader. The upsert keeps
- * the cache single-copy per Open Library work; after this the world never waits
- * on a third party again.
+ * Cache the book for everyone, then shelve it for this reader.
+ *
+ * Deliberately not an upsert: PostgREST compiles upsert to ON CONFLICT DO
+ * UPDATE, and the books cache has no update policy on purpose — nobody may edit
+ * what someone else cached. So: look first, insert only if absent, tolerate a
+ * duplicate insert from a racing reader, then read back whichever row won.
  */
-export async function addBook(book: NewBook, genre: Genre, status: UserBook['status'] = 'reading'): Promise<UserBook> {
-  const cached = unwrap(
-    await supabase
-      .from('books')
-      .upsert(
-        {
-          ol_work_key: book.olWorkKey,
-          title: book.title,
-          author: book.author,
-          pages: book.pages,
-          cover_id: book.coverId,
-          subjects: book.subjects,
-        },
-        { onConflict: 'ol_work_key', ignoreDuplicates: false },
-      )
-      .select()
-      .single(),
-  ) as BookRow;
+async function cacheBook(book: NewBook): Promise<BookRow> {
+  const existing = await supabase.from('books').select('*').eq('ol_work_key', book.olWorkKey).maybeSingle();
+  if (existing.error) throw new Error(existing.error.message);
+  if (existing.data) return existing.data as BookRow;
 
+  const inserted = await supabase
+    .from('books')
+    .insert({
+      ol_work_key: book.olWorkKey,
+      title: book.title,
+      author: book.author,
+      pages: book.pages,
+      cover_id: book.coverId,
+      subjects: book.subjects,
+    })
+    .select()
+    .maybeSingle();
+
+  if (inserted.data) return inserted.data as BookRow;
+
+  // 23505: another reader cached the same work a moment ago. Their row is fine.
+  const isDuplicate = inserted.error?.code === '23505';
+  if (inserted.error && !isDuplicate) throw new Error(inserted.error.message);
+
+  const settled = await supabase.from('books').select('*').eq('ol_work_key', book.olWorkKey).single();
+  if (settled.error) throw new Error(settled.error.message);
+  return settled.data as BookRow;
+}
+
+export async function addBook(book: NewBook, genre: Genre, status: UserBook['status'] = 'reading'): Promise<UserBook> {
+  const cached = await cacheBook(book);
   const shelved = unwrap(
     await supabase.from('user_books').insert({ book_id: cached.id, status, genre }).select().single(),
   ) as UserBookRow;
-
   return toUserBook(shelved);
 }
 
