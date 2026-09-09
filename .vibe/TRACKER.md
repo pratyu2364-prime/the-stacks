@@ -12,6 +12,23 @@ Loop: `ship` skill, autopilot (self-merge on green CI).
 | t05-auth-books-sessions | Auth, add book, log session | done | #5 |
 | t06-dashboard | Dashboard | done | #6 |
 | t07-world-live | World on real data, ship V1 | done | #7 |
+| (post-V1) | no-db state, CI live build, new-reader fix, better search | done | #8-#11 |
+
+### Mobile (Android companion)
+Spec: `docs/superpowers/specs/2026-09-09-the-stacks-mobile-design.md`
+Plan: `docs/superpowers/plans/2026-09-09-the-stacks-mobile.md`
+
+| id | title | status | PR |
+|---|---|---|---|
+| m01-workspace | Workspace split: apps/web + packages/domain | todo | |
+| m02-data-package | Platform-neutral @stacks/data | todo | |
+| m03-mobile-auth | Expo app + email/password sign-in | todo | |
+| m04-shelf | Shelf and book screens | todo | |
+| m05-outbox | Offline outbox and the log sheet | todo | |
+| m06-add-book | Add a book from Open Library | todo | |
+| m07-nudge | Daily local nudge | todo | |
+| m08-delete-account | Account deletion edge function | todo | |
+| m09-apk | EAS preview APK | todo | |
 
 ## Activity
 - t01-scaffold · done · PR #1 · attempts 1 · workers unavailable (opencode 500, hermes blocked by sandbox), reviewer implemented · deployed, site live
