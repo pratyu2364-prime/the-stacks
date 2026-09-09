@@ -1,9 +1,10 @@
 import { Stack } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/auth';
 import { DEFAULT_NUDGE_TIME, readNudgeTime, writeNudgeTime, type NudgeTime } from '../src/nudgeTime';
+import { supabase } from '../src/supabase';
 
 const asInt = (value: string): number | null => {
   const n = Number.parseInt(value, 10);
@@ -113,7 +114,34 @@ export default function SettingsScreen() {
       </Pressable>
       <Pressable
         style={[styles.dangerButton, busy && styles.buttonDisabled]}
-        onPress={() => setMessage('Account deletion is coming in a future update.')}
+        onPress={() => {
+          Alert.alert(
+            'Delete account?',
+            'This will permanently delete your account, all your shelved books, and every logged reading session. This cannot be undone.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                  setBusy(true);
+                  setError(null);
+                  setMessage(null);
+                  try {
+                    const { error: fnError } = await supabase.functions.invoke('delete-account', {
+                      method: 'DELETE',
+                    });
+                    if (fnError) throw new Error(fnError.message);
+                    await signOut();
+                  } catch (e: unknown) {
+                    setBusy(false);
+                    setError(e instanceof Error ? e.message : 'Deletion failed.');
+                  }
+                },
+              },
+            ],
+          );
+        }}
         disabled={busy}
       >
         <Text style={styles.dangerButtonText}>Delete my account</Text>
