@@ -1,0 +1,14 @@
+project_id = "the-stacks"
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
