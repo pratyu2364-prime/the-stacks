@@ -12,3 +12,7 @@ site_url = "http://localhost:5173"
 enabled = true
 port = 54321
 schemas = ["public"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false

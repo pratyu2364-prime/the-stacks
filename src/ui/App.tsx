@@ -1,19 +1,25 @@
 import { Route, Routes } from 'react-router-dom';
+import { AuthProvider, RequireAuth } from './auth';
 import { Landing } from './routes/Landing';
 import { NotBuilt } from './routes/NotBuilt';
 import { Library } from './routes/Library';
+import { SignIn } from './routes/SignIn';
+import { Books } from './routes/Books';
+import { BookDetail } from './routes/BookDetail';
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<NotBuilt title="Sign in" task="t05" />} />
-      <Route path="/signup" element={<NotBuilt title="Sign up" task="t05" />} />
-      <Route path="/dashboard" element={<NotBuilt title="Dashboard" task="t06" />} />
-      <Route path="/books" element={<NotBuilt title="Your library" task="t05" />} />
-      <Route path="/books/:id" element={<NotBuilt title="Book" task="t05" />} />
-      <Route path="/library" element={<Library />} />
-      <Route path="*" element={<NotBuilt title="Nothing here" task="—" />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<SignIn mode="in" />} />
+        <Route path="/signup" element={<SignIn mode="up" />} />
+        <Route path="/dashboard" element={<RequireAuth><NotBuilt title="Dashboard" task="t06" /></RequireAuth>} />
+        <Route path="/books" element={<RequireAuth><Books /></RequireAuth>} />
+        <Route path="/books/:id" element={<RequireAuth><BookDetail /></RequireAuth>} />
+        <Route path="/library" element={<Library />} />
+        <Route path="*" element={<NotBuilt title="Nothing here" task="—" />} />
+      </Routes>
+    </AuthProvider>
   );
 }
