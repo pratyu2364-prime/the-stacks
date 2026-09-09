@@ -6,7 +6,7 @@ export const PALETTE = {
   stone: 0x241a12,
   shelf: 0x5a3f26,
   trim: 0x6b4a2b,
-  paper: 0xefe6d2,
+  paper: 0xc9bda2,
   lamp: 0xffb45c,
   lampBall: 0xffd79a,
   sconce: 0xff9d45,

@@ -70,14 +70,25 @@ export function buildHome(
     home.add(leg);
   }
 
-  // What you are reading right now lies open on the desk, not shelved.
+  // What you are reading lies on the desk as well as standing on its shelf: a
+  // stack of closed books with cloth boards and a paler page block, not the
+  // white slabs that shipped first and bloomed like signage.
+  let stackHeight = 0;
   model.reading.slice(0, 4).forEach((book, i) => {
-    const lying = new Mesh(UNIT_BOX, materials.paper);
-    lying.scale.set(0.44, 0.035 + book.spineWidth * 0.2, 0.32);
-    lying.position.set(-0.45 + i * 0.32, 0.78 + i * 0.05, -1.85);
-    lying.rotation.y = 0.18 - i * 0.12;
+    const thickness = 0.05 + book.spineWidth * 0.35;
+    const lying = new Group();
+    const boards = new Mesh(UNIT_BOX, materials.deskBook);
+    boards.scale.set(0.46, thickness, 0.33);
+    lying.add(boards);
+    const pages = new Mesh(UNIT_BOX, materials.paper);
+    pages.scale.set(0.43, thickness * 0.72, 0.305);
+    pages.position.x = -0.012;
+    lying.add(pages);
+    lying.position.set(-0.3 + i * 0.06, 0.765 + stackHeight + thickness / 2, -1.85 + i * 0.04);
+    lying.rotation.y = 0.14 - i * 0.09;
     lying.userData = { title: book.title, author: book.author, pages: book.pages };
     home.add(lying);
+    stackHeight += thickness + 0.004;
   });
 }
 
