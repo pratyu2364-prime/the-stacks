@@ -56,7 +56,11 @@ jobs:
         with:
           version: 2.116.0
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @stacks/web exec playwright install --with-deps chromium
+      # The browser binary comes from Playwright's own CDN. --with-deps would run
+      # apt-get update, and the runner image carries a Google Chrome apt source
+      # whose index has been serving a hash mismatch; the shared libraries
+      # Playwright needs are already on the ubuntu image.
+      - run: pnpm --filter @stacks/web exec playwright install chromium
       # A throwaway Supabase stack, then the real bundle against it. The test
       # signs up, shelves a book and logs a sitting the way a reader would.
       - run: supabase start
