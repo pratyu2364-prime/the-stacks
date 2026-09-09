@@ -5,7 +5,7 @@ import type { Book, Genre, Session, ShelvedBook, UserBook, WorldModel } from './
 
 /** Five walls of five boards per genre room. */
 export const BOARDS_PER_ROOM = 25;
-export const BOARD_SPAN = 5.93; // metres of usable board, from the hex geometry
+export const BOARD_SPAN = 4.87; // metres of usable board: hex side 5.77 less the end posts
 const DEFAULT_PAGES = 300;
 
 function shelved(userBook: UserBook, book: Book): ShelvedBook {
