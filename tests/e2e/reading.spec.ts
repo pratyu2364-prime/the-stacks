@@ -27,6 +27,9 @@ async function signUp(page: Page): Promise<string> {
   await page.getByTestId('email').fill(email);
   await page.getByTestId('password').fill('correct horse battery');
   await page.getByTestId('submit').click();
+  // Signup is not done until the session exists; navigating sooner lands on
+  // /login, because RequireAuth is right and the test was wrong.
+  await expect(page).toHaveURL(/dashboard/);
   return email;
 }
 
@@ -34,7 +37,6 @@ test('a reader signs up, shelves a book, and logs a sitting', async ({ page }) =
   await page.route(OPEN_LIBRARY, (route) => route.fulfill({ json: HIT }));
 
   await signUp(page);
-  await expect(page).toHaveURL(/dashboard/);
 
   await page.goto('books');
   await page.getByTestId('search').fill('karamazov');
