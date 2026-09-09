@@ -44,6 +44,8 @@ test('a new account sees a world with every arch bricked up', async ({ page }) =
   await page.getByTestId('email').fill(`empty-${Date.now()}@example.com`);
   await page.getByTestId('password').fill('correct horse battery');
   await page.getByTestId('submit').click();
+  // Wait for the session to land, or /library renders the signed-out demo.
+  await expect(page).toHaveURL(/dashboard/);
 
   await page.goto('library?lite');
   await expect(page.getByText('bricked up')).toBeVisible();
