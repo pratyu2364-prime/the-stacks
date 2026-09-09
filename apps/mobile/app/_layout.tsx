@@ -1,6 +1,8 @@
 import { Redirect, Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, AppState, View } from 'react-native';
 import { AuthProvider, useAuth } from '../src/auth';
+import { outbox } from '../src/db';
 
 function Gate() {
   const { session, loading } = useAuth();
@@ -19,6 +21,13 @@ function Gate() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void outbox.flush();
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
     <AuthProvider>
       <Gate />
