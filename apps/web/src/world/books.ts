@@ -1,5 +1,5 @@
 import { BoxGeometry, Color, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D } from 'three';
-import type { ShelvedBook } from '../domain';
+import type { ShelvedBook } from '@stacks/domain';
 import { PALETTE } from './palette';
 import { UNIT_BOX } from './geometry';
 import { spineTexture } from './spineTexture';

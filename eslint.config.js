@@ -2,28 +2,43 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-/** Layer rules from the design spec, section 3. */
-const layerRules = {
-  'src/domain': ['three', 'react', 'react-dom', '@supabase/*', '**/data/*', '**/world/*', '**/ui/*'],
-  'src/data': ['three', 'react', 'react-dom', '**/world/*', '**/ui/*'],
-  'src/world': ['@supabase/*', 'react', 'react-dom', '**/data/*', '**/ui/*'],
-};
-
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage'] },
+  { ignores: ['**/dist', '**/node_modules', '**/coverage', '**/.expo'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{ts,tsx}'],
-    languageOptions: { globals: { ...globals.browser, ...globals.es2022 } },
-  },
-  ...Object.entries(layerRules).map(([dir, patterns]) => ({
-    files: [`${dir}/**/*.{ts,tsx}`],
+    files: ['packages/domain/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: patterns.map((p) => ({ group: [p], message: `${dir} may not import ${p} — see spec section 3.` })) },
+        {
+          patterns: [
+            { group: ['three', 'react', 'react-dom', '@supabase/*', '@stacks/*', 'expo*', 'react-native*'], message: 'domain depends on nothing — see the mobile design spec, section 3.1.' },
+          ],
+        },
       ],
     },
-  })),
+  },
+  {
+    files: ['packages/data/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['three', 'react', 'react-dom', 'expo*', 'react-native*', '@stacks/web', '@stacks/mobile'], message: 'data is platform-neutral — inject platform differences, see spec section 3.1.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['apps/web/src/world/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ group: ['@supabase/*', 'react', 'react-dom', '@stacks/data'], message: 'world renders a WorldModel and knows nothing else — see the V1 spec, section 3.' }] },
+      ],
+    },
+  },
 );

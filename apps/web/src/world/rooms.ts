@@ -1,5 +1,5 @@
 import { Group, Mesh, Sprite, SpriteMaterial } from 'three';
-import { GENRES, type WorldModel } from '../domain';
+import { GENRES, type WorldModel } from '@stacks/domain';
 import { GEOMETRY, hexSide } from './palette';
 import { UNIT_BOX, hexPlate, wallAngle, wallPanel } from './geometry';
 import { buildBoard, buildStacks, type BookMesh } from './books';

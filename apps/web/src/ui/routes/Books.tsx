@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GENRES, type Book, type Genre, type UserBook } from '../../domain';
+import { GENRES, type Book, type Genre, type UserBook } from '@stacks/domain';
 import { addBook, coverUrl, loadLibrary, searchBooks, type SearchHit } from '../../data';
 import { Shell } from '../components/Shell';
 

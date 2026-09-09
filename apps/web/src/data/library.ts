@@ -1,4 +1,4 @@
-import type { Book, Genre, Session, UserBook } from '../domain';
+import type { Book, Genre, Session, UserBook } from '@stacks/domain';
 import { supabase } from './client';
 
 type BookRow = {

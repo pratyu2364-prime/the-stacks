@@ -1,6 +1,6 @@
 import { PerspectiveCamera, Raycaster, Vector2 } from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
-import { isInsideWorld, type WorldLayout } from '../domain';
+import { isInsideWorld, type WorldLayout } from '@stacks/domain';
 import { GEOMETRY } from './palette';
 import type { BookMesh } from './books';
 

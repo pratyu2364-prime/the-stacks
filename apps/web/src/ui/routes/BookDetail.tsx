@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import type { Book, Session, UserBook } from '../../domain';
-import { dayKey } from '../../domain';
+import type { Book, Session, UserBook } from '@stacks/domain';
+import { dayKey } from '@stacks/domain';
 import { coverUrl, loadLibrary, logSession, setStatus } from '../../data';
 import { Shell } from '../components/Shell';
 

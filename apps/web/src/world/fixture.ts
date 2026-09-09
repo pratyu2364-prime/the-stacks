@@ -1,4 +1,4 @@
-import { buildWorldModel, type Book, type Genre, type UserBook, type WorldModel } from '../domain';
+import { buildWorldModel, type Book, type Genre, type UserBook, type WorldModel } from '@stacks/domain';
 
 const RAW: Array<[string, string, number, Genre]> = [
   ['The Brothers Karamazov', 'Dostoevsky', 824, 'philosophy'],

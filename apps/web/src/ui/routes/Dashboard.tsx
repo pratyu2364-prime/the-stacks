@@ -9,7 +9,7 @@ import {
   type Book,
   type Session,
   type UserBook,
-} from '../../domain';
+} from '@stacks/domain';
 import { loadLibrary } from '../../data';
 import { Shell } from '../components/Shell';
 import { MonthBars } from '../components/MonthBars';

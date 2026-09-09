@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { buildWorldModel, type WorldModel } from '../../domain';
+import { buildWorldModel, type WorldModel } from '@stacks/domain';
 import { loadLibrary } from '../../data';
 import { createWorld, fixtureModel } from '../../world';
 import { useAuth } from '../auth';

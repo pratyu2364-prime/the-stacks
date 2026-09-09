@@ -1,5 +1,5 @@
-import type { Genre } from '../domain';
-import { bucketGenre } from '../domain';
+import type { Genre } from '@stacks/domain';
+import { bucketGenre } from '@stacks/domain';
 
 export type SearchHit = {
   olWorkKey: string;

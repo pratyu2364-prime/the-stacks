@@ -3,7 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { DEFAULT_LAYOUT, GENRES, type WorldModel } from '../domain';
+import { DEFAULT_LAYOUT, GENRES, type WorldModel } from '@stacks/domain';
 import { GEOMETRY, PALETTE } from './palette';
 import { createMaterials } from './materials';
 import { buildGenreRoom, buildHome } from './rooms';
