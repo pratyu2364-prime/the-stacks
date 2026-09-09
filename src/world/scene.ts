@@ -20,6 +20,13 @@ export type World = {
   books: BookMesh[];
 };
 
+declare global {
+  interface Window {
+    /** The E2E hook: what is actually standing on the shelves right now. */
+    __stacks?: { titles: string[] };
+  }
+}
+
 export function createWorld(canvas: HTMLCanvasElement, model: WorldModel, lite = false): World {
   // A canvas measured before layout reports 0, which makes the aspect NaN and
   // the first frame black. Never trust it below 1px.
@@ -52,6 +59,8 @@ export function createWorld(canvas: HTMLCanvasElement, model: WorldModel, lite =
   for (const light of ambientRig()) scene.add(light);
   const dust = createDust(lite ? 300 : 900, GEOMETRY.homeApothem);
   scene.add(dust.points);
+
+  window.__stacks = { titles: books.map((b) => b.userData.title) };
 
   const layout = { ...DEFAULT_LAYOUT, openArches: openWalls };
   const walker = createWalker(camera, canvas, layout, books);
@@ -100,6 +109,7 @@ export function createWorld(canvas: HTMLCanvasElement, model: WorldModel, lite =
       return mesh ? mesh.userData : null;
     },
     dispose() {
+      delete window.__stacks;
       cancelAnimationFrame(raf);
       canvas.removeEventListener('click', lock);
       window.removeEventListener('resize', resize);

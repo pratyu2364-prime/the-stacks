@@ -24,9 +24,13 @@ export function Landing() {
           sign in
         </Link>
       </div>
-      <Link to="/library" className="mt-12 text-[11px] uppercase tracking-widest text-dust hover:text-lamp">
-        walk the demo library →
+      <Link
+        to="/library"
+        className="mt-12 text-[11px] uppercase tracking-widest text-dust hover:text-lamp border-b border-dust/40 hover:border-lamp pb-1"
+      >
+        walk a demo library first →
       </Link>
+      <p className="mt-3 text-[11px] text-dust/70">no account needed · WASD and a mouse</p>
     </main>
   );
 }
