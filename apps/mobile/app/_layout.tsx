@@ -1,4 +1,4 @@
-import { Redirect, router, Stack } from 'expo-router';
+import { router, Stack, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { ActivityIndicator, AppState, View } from 'react-native';
@@ -30,6 +30,7 @@ function mostRecentlyReadReadingBook(userBooks: UserBook[], sessions: Session[])
 function Gate() {
   const { session, loading } = useAuth();
   const signedIn = session != null;
+  const segments = useSegments();
 
   useEffect(() => {
     if (!signedIn) return;
@@ -68,17 +69,41 @@ function Gate() {
     };
   }, [signedIn]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  /**
+   * The navigator is rendered on every path, including while the stored session
+   * is still being read. Returning a redirect or a bare spinner instead leaves
+   * expo-router with no mounted root to navigate within, which is a grey screen
+   * and a stuttering spinner rather than an error.
+   */
+  const onSignIn = segments[0] === 'sign-in';
 
-  if (!session) return <Redirect href="/sign-in" />;
+  useEffect(() => {
+    if (loading) return;
+    if (!signedIn && !onSignIn) router.replace('/sign-in');
+    if (signedIn && onSignIn) router.replace('/');
+  }, [loading, signedIn, onSignIn]);
 
-  return <Stack />;
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack />
+      {loading ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#faf7f2',
+          }}
+        >
+          <ActivityIndicator size="large" />
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export default function RootLayout() {

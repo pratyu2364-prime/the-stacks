@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { createStacksClient, type StacksStorage } from '@stacks/data';
+import { createChunkedStorage } from './chunkedStorage';
 
 const extra = Constants.expoConfig?.extra ?? {};
 
@@ -9,11 +10,7 @@ const extra = Constants.expoConfig?.extra ?? {};
  * session readable by anything on the device is the one thing here worth
  * getting right.
  */
-const secureStorage: StacksStorage = {
-  getItem: (key) => SecureStore.getItemAsync(key),
-  setItem: (key, value) => SecureStore.setItemAsync(key, value),
-  removeItem: (key) => SecureStore.deleteItemAsync(key),
-};
+const secureStorage: StacksStorage = createChunkedStorage(SecureStore);
 
 export const supabase = createStacksClient({
   url: String(extra.supabaseUrl ?? ''),
