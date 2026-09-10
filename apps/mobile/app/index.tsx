@@ -19,7 +19,7 @@ const STATUS_ORDER: BookStatus[] = ['reading', 'want', 'finished', 'abandoned'];
 type ShelfSection = { title: string; data: UserBook[] };
 
 export default function ShelfScreen() {
-  const { books, userBooks, streak, loading, error, reload } = useLibrary();
+  const { books, userBooks, streak, pendingIds, loading, error, reload } = useLibrary();
   const fade = useRef(new Animated.Value(0)).current;
 
   // Shelving a book or logging a sitting happens on another screen holding its
@@ -103,6 +103,11 @@ export default function ShelfScreen() {
               {streak} day{streak === 1 ? '' : 's'}
             </Text>
             <Text style={styles.streakCaption}>reading streak</Text>
+            {pendingIds.size > 0 && (
+              <Text style={styles.pendingText}>
+                {pendingIds.size} sitting{pendingIds.size === 1 ? '' : 's'} waiting to sync
+              </Text>
+            )}
             <View style={styles.headerRow}>
               <Pressable
                 style={({ pressed }) => [shared.primaryBtn, pressed && styles.pressed]}
@@ -188,6 +193,13 @@ const styles = StyleSheet.create({
     fontSize: font.size.xs,
     letterSpacing: 2,
     textTransform: 'uppercase',
+  },
+  pendingText: {
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
+    fontStyle: 'italic',
+    marginTop: spacing.xs,
   },
   emptyTitle: {
     color: palette.paper,

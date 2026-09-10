@@ -50,13 +50,21 @@ jest.mock('@stacks/data', () => ({
 }));
 jest.mock('./supabase', () => ({ supabase: {} }));
 
+const mockPending = jest.fn(async () => [] as Array<{ id: string; userBookId: string; readOn: string; pageStart: number | null; pageEnd: number | null; minutes: number | null; mood: string | null; note: string | null }>);
+
+jest.mock('./db', () => ({
+  get outbox() { return { pending: mockPending }; },
+}));
+
 beforeEach(() => {
   mockAddBook.mockClear();
   mockLoadLibrary.mockClear();
   mockRemoveBook.mockClear();
   mockUpdateSession.mockClear();
   mockRemoveSession.mockClear();
+  mockPending.mockClear();
   mockLoadLibrary.mockResolvedValue(initialLoad);
+  mockPending.mockResolvedValue([]);
 });
 
 it('exposes the shelf and the streak from the shared domain', async () => {
@@ -138,4 +146,60 @@ it('deleteSession calls the data layer then reloads', async () => {
   expect(mockRemoveSession).toHaveBeenCalledWith(expect.anything(), 's1');
 
   await waitFor(() => expect(result.current.sessions).toHaveLength(0));
+});
+
+it('merges pending outbox sessions into the merged sessions list', async () => {
+  mockPending.mockResolvedValue([
+    { id: 'p1', userBookId: 'ub1', readOn: '2026-09-10', pageStart: null, pageEnd: null, minutes: 15, mood: 'calm', note: null },
+  ]);
+
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  expect(result.current.sessions).toHaveLength(2);
+  expect(result.current.pendingIds.has('p1')).toBe(true);
+  const pending = result.current.sessions.find((s) => s.id === 'p1');
+  expect(pending).toBeDefined();
+  expect(pending!.minutes).toBe(15);
+});
+
+it('a pending sitting keeps the streak alive', async () => {
+  mockPending.mockResolvedValue([
+    { id: 'p2', userBookId: 'ub1', readOn: '2026-09-10', pageStart: null, pageEnd: null, minutes: 10, mood: null, note: null },
+  ]);
+
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  expect(result.current.streak).toBeGreaterThanOrEqual(2);
+});
+
+it('deduplicates: a row on both server and outbox appears exactly once, server wins', async () => {
+  const serverSession = { id: 's1', userBookId: 'ub1', readOn: '2026-09-09', pageStart: 1, pageEnd: 20, minutes: 30, mood: null, note: null };
+  mockPending.mockResolvedValue([
+    { ...serverSession, pageEnd: 99 },
+  ]);
+
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  const matching = result.current.sessions.filter((s) => s.id === 's1');
+  expect(matching).toHaveLength(1);
+  expect(matching[0].pageEnd).toBe(20);
+});
+
+it('does not call a sitting pending once the server has it', async () => {
+  // The outbox still holds s1 — it was sent but the row lingers. Calling it
+  // unsynced would lie to the reader and hide the edit controls from a sitting
+  // that can perfectly well be edited.
+  mockPending.mockResolvedValue([
+    { id: 's1', userBookId: 'ub1', readOn: '2026-09-09', pageStart: 1, pageEnd: 20, minutes: 30, mood: null, note: null },
+    { id: 's2', userBookId: 'ub1', readOn: '2026-09-10', pageStart: 21, pageEnd: 44, minutes: 25, mood: null, note: null },
+  ]);
+
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  expect(result.current.pendingIds.has('s1')).toBe(false);
+  expect(result.current.pendingIds.has('s2')).toBe(true);
 });

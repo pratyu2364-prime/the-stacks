@@ -27,11 +27,13 @@ function SittingRow({
   onSaved,
   onDelete,
   onEdit,
+  pending,
 }: {
   session: Session;
   onSaved: () => void;
   onDelete: (id: string) => void;
   onEdit: (id: string, patch: SessionPatch) => Promise<void>;
+  pending: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -126,6 +128,21 @@ function SittingRow({
     );
   }
 
+  if (pending) {
+    return (
+      <View style={styles.sessionRow}>
+        <Text style={styles.sessionDate}>{session.readOn}</Text>
+        <Text style={styles.sessionDetail}>
+          {[session.pageStart != null && session.pageEnd != null ? `${session.pageStart}–${session.pageEnd}` : null, session.minutes != null ? `${session.minutes} min` : null, session.mood]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
+        {session.note && <Text style={styles.sessionNote} numberOfLines={2}>{session.note}</Text>}
+        <Text style={styles.pendingHint}>not synced yet</Text>
+      </View>
+    );
+  }
+
   return (
     <Pressable
       style={({ pressed }) => [styles.sessionRow, pressed && styles.pressed]}
@@ -146,7 +163,7 @@ function SittingRow({
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { books, userBooks, sessions, loading, reload, removeBook, deleteSession, editSession } = useLibrary();
+  const { books, userBooks, sessions, pendingIds, loading, reload, removeBook, deleteSession, editSession } = useLibrary();
   const fade = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
@@ -250,7 +267,7 @@ export default function BookScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <SittingRow session={item} onSaved={refresh} onDelete={handleDeleteSession} onEdit={editSession} />
+          <SittingRow session={item} onSaved={refresh} onDelete={handleDeleteSession} onEdit={editSession} pending={pendingIds.has(item.id)} />
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No sessions for this book yet.</Text>}
       />
@@ -351,6 +368,13 @@ const styles = StyleSheet.create({
     fontFamily: font.family.mono,
     fontSize: font.size.xs,
     marginTop: spacing.xs,
+  },
+  pendingHint: {
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
   },
   emptyText: {
     color: palette.dust,
