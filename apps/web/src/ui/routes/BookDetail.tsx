@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Book, Session, UserBook } from '@stacks/domain';
 import { dayKey } from '@stacks/domain';
-import { coverUrl, loadLibrary, logSession, removeBook, setStatus } from '@stacks/data';
+import { coverUrl, loadLibrary, logSession, removeBook, setStatus, updateSession, removeSession } from '@stacks/data';
 import { supabase } from '../../supabase';
 import { Shell } from '../components/Shell';
 
@@ -91,18 +91,116 @@ export function BookDetail() {
       {sessions.length === 0 && <p className="text-dust text-sm">No sittings logged yet.</p>}
       <ol data-testid="thread" className="grid gap-3">
         {sessions.map((s) => (
-          <li key={s.id} className="border-l-2 border-oak/60 pl-4 py-1">
-            <p className="text-[11px] uppercase tracking-widest text-dust">
-              {s.readOn}
-              {s.pageStart != null && s.pageEnd != null && ` · pp ${s.pageStart}–${s.pageEnd}`}
-              {s.minutes != null && ` · ${s.minutes} min`}
-              {s.mood && ` · ${s.mood}`}
-            </p>
-            {s.note && <p className="text-sm text-paper/90 mt-1 whitespace-pre-wrap font-serif">{s.note}</p>}
-          </li>
+          <SittingRow key={s.id} session={s} onSaved={() => void refresh()} />
         ))}
       </ol>
     </Shell>
+  );
+}
+
+function SittingRow({ session, onSaved }: { session: Session; onSaved: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [readOn, setReadOn] = useState(session.readOn);
+  const [pageStart, setPageStart] = useState(session.pageStart != null ? String(session.pageStart) : '');
+  const [pageEnd, setPageEnd] = useState(session.pageEnd != null ? String(session.pageEnd) : '');
+  const [minutes, setMinutes] = useState(session.minutes != null ? String(session.minutes) : '');
+  const [mood, setMood] = useState(session.mood ?? '');
+  const [note, setNote] = useState(session.note ?? '');
+
+  async function save() {
+    setBusy(true);
+    setError(null);
+    try {
+      await updateSession(supabase, session.id, {
+        readOn,
+        pageStart: pageStart === '' ? null : Number(pageStart),
+        pageEnd: pageEnd === '' ? null : Number(pageEnd),
+        minutes: minutes === '' ? null : Number(minutes),
+        mood: mood || null,
+        note: note || null,
+      });
+      setEditing(false);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'could not save');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function confirmDelete() {
+    if (!window.confirm('Delete this sitting?')) return;
+    setBusy(true);
+    removeSession(supabase, session.id)
+      .then(onSaved)
+      .catch((e: Error) => { setError(e.message); setBusy(false); });
+  }
+
+  if (editing) {
+    return (
+      <li className="border border-oak/60 rounded p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+          <input type="date" value={readOn} onChange={(e) => setReadOn(e.target.value)}
+            className="bg-black/40 border border-oak/60 rounded px-2 py-1.5 text-sm" />
+          <input value={pageStart} onChange={(e) => setPageStart(e.target.value)} inputMode="numeric"
+            placeholder="from p." className="bg-black/40 border border-oak/60 rounded px-2 py-1.5 text-sm" />
+          <input value={pageEnd} onChange={(e) => setPageEnd(e.target.value)} inputMode="numeric"
+            placeholder="to p." className="bg-black/40 border border-oak/60 rounded px-2 py-1.5 text-sm" />
+          <input value={minutes} onChange={(e) => setMinutes(e.target.value)} inputMode="numeric"
+            placeholder="minutes" className="bg-black/40 border border-oak/60 rounded px-2 py-1.5 text-sm" />
+          <input value={mood} onChange={(e) => setMood(e.target.value)}
+            placeholder="mood" className="bg-black/40 border border-oak/60 rounded px-2 py-1.5 text-sm" />
+        </div>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={4}
+          placeholder="what you thought while reading"
+          className="w-full bg-black/40 border border-oak/60 rounded px-3 py-2 text-sm font-serif"
+        />
+        {error && <p className="text-sm text-red-300 mt-2">{error}</p>}
+        <div className="mt-3 flex gap-2">
+          <button onClick={() => void save()} disabled={busy}
+            className="px-4 py-2 rounded bg-lamp text-ink text-xs uppercase tracking-widest disabled:opacity-50">
+            {busy ? 'saving…' : 'save'}
+          </button>
+          <button onClick={() => setEditing(false)} disabled={busy}
+            className="px-4 py-2 rounded border border-oak/50 text-dust text-xs uppercase tracking-widest">
+            cancel
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="border-l-2 border-oak/60 pl-4 py-1 group">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] uppercase tracking-widest text-dust">
+            {session.readOn}
+            {session.pageStart != null && session.pageEnd != null && ` · pp ${session.pageStart}–${session.pageEnd}`}
+            {session.minutes != null && ` · ${session.minutes} min`}
+            {session.mood && ` · ${session.mood}`}
+          </p>
+          {session.note && <p className="text-sm text-paper/90 mt-1 whitespace-pre-wrap font-serif">{session.note}</p>}
+        </div>
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={() => setEditing(true)}
+            className="px-2 py-0.5 rounded border border-oak/50 text-dust text-[10px] uppercase tracking-widest">
+            edit
+          </button>
+          <button onClick={confirmDelete} disabled={busy}
+            className="px-2 py-0.5 rounded border border-red-400/50 text-red-300 text-[10px] uppercase tracking-widest disabled:opacity-50">
+            delete
+          </button>
+        </div>
+      </div>
+      {error && <p className="text-sm text-red-300 mt-1">{error}</p>}
+    </li>
   );
 }
 

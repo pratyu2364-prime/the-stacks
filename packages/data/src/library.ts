@@ -189,3 +189,32 @@ export async function removeBook(client: SupabaseClient, userBookId: string): Pr
   const { error } = await client.from('user_books').delete().eq('id', userBookId);
   if (error) throw new Error(error.message);
 }
+
+export type SessionPatch = {
+  readOn?: string;
+  pageStart?: number | null;
+  pageEnd?: number | null;
+  minutes?: number | null;
+  mood?: string | null;
+  note?: string | null;
+};
+
+export async function updateSession(client: SupabaseClient, id: string, patch: SessionPatch): Promise<Session> {
+  const wire: Record<string, unknown> = {};
+  if (patch.readOn !== undefined) wire.read_on = patch.readOn;
+  if (patch.pageStart !== undefined) wire.page_start = patch.pageStart;
+  if (patch.pageEnd !== undefined) wire.page_end = patch.pageEnd;
+  if (patch.minutes !== undefined) wire.minutes = patch.minutes;
+  if (patch.mood !== undefined) wire.mood = patch.mood;
+  if (patch.note !== undefined) wire.note = patch.note;
+
+  const row = unwrap(
+    await client.from('sessions').update(wire).eq('id', id).select().single(),
+  ) as SessionRow;
+  return toSession(row);
+}
+
+export async function removeSession(client: SupabaseClient, id: string): Promise<void> {
+  const { error } = await client.from('sessions').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}

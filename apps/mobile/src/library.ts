@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addBook as dataAddBook, loadLibrary, removeBook as dataRemoveBook, type NewBook, type SearchHit } from '@stacks/data';
+import { addBook as dataAddBook, loadLibrary, removeBook as dataRemoveBook, updateSession as dataUpdateSession, removeSession as dataRemoveSession, type NewBook, type SearchHit, type SessionPatch } from '@stacks/data';
 import { currentStreak, type Book, type BookStatus, type Session, type UserBook } from '@stacks/domain';
 import { supabase } from './supabase';
 
@@ -13,6 +13,8 @@ type LibraryValue = {
   reload(): Promise<void>;
   addBook(hit: SearchHit, status?: BookStatus): Promise<void>;
   removeBook(userBookId: string): Promise<void>;
+  editSession(id: string, patch: SessionPatch): Promise<void>;
+  deleteSession(id: string): Promise<void>;
 };
 
 export function useLibrary(): LibraryValue {
@@ -64,6 +66,22 @@ export function useLibrary(): LibraryValue {
     [reload],
   );
 
+  const editSessionById = useCallback(
+    async (sessionId: string, patch: SessionPatch) => {
+      await dataUpdateSession(supabase, sessionId, patch);
+      await reload();
+    },
+    [reload],
+  );
+
+  const deleteSessionById = useCallback(
+    async (sessionId: string) => {
+      await dataRemoveSession(supabase, sessionId);
+      await reload();
+    },
+    [reload],
+  );
+
   return {
     books,
     userBooks,
@@ -74,5 +92,7 @@ export function useLibrary(): LibraryValue {
     reload,
     addBook: shelvedAddBook,
     removeBook: removeBookById,
+    editSession: editSessionById,
+    deleteSession: deleteSessionById,
   };
 }

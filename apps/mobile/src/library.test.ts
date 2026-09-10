@@ -25,14 +25,28 @@ const afterRemove = {
   sessions: [],
 };
 
+const afterEdit = {
+  ...initialLoad,
+  sessions: [{ ...initialLoad.sessions[0], pageEnd: 25 }],
+};
+
+const afterDelete = {
+  ...initialLoad,
+  sessions: [],
+};
+
 const mockAddBook = jest.fn(async () => afterAdd);
 const mockLoadLibrary = jest.fn(async () => initialLoad);
 const mockRemoveBook = jest.fn(async () => undefined);
+const mockUpdateSession = jest.fn(async () => undefined);
+const mockRemoveSession = jest.fn(async () => undefined);
 
 jest.mock('@stacks/data', () => ({
   get addBook() { return mockAddBook; },
   get loadLibrary() { return mockLoadLibrary; },
   get removeBook() { return mockRemoveBook; },
+  get updateSession() { return mockUpdateSession; },
+  get removeSession() { return mockRemoveSession; },
 }));
 jest.mock('./supabase', () => ({ supabase: {} }));
 
@@ -40,6 +54,8 @@ beforeEach(() => {
   mockAddBook.mockClear();
   mockLoadLibrary.mockClear();
   mockRemoveBook.mockClear();
+  mockUpdateSession.mockClear();
+  mockRemoveSession.mockClear();
   mockLoadLibrary.mockResolvedValue(initialLoad);
 });
 
@@ -94,4 +110,32 @@ it('removeBook calls the data layer then reloads the shelf', async () => {
 
   await waitFor(() => expect(result.current.userBooks).toHaveLength(0));
   expect(result.current.sessions).toHaveLength(0);
+});
+
+it('editSession calls the data layer then reloads', async () => {
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  mockLoadLibrary.mockResolvedValue(afterEdit);
+
+  await result.current.editSession('s1', { pageEnd: 25 });
+
+  expect(mockUpdateSession).toHaveBeenCalledTimes(1);
+  expect(mockUpdateSession).toHaveBeenCalledWith(expect.anything(), 's1', { pageEnd: 25 });
+
+  await waitFor(() => expect(result.current.sessions[0].pageEnd).toBe(25));
+});
+
+it('deleteSession calls the data layer then reloads', async () => {
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  mockLoadLibrary.mockResolvedValue(afterDelete);
+
+  await result.current.deleteSession('s1');
+
+  expect(mockRemoveSession).toHaveBeenCalledTimes(1);
+  expect(mockRemoveSession).toHaveBeenCalledWith(expect.anything(), 's1');
+
+  await waitFor(() => expect(result.current.sessions).toHaveLength(0));
 });
