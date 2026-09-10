@@ -2,8 +2,28 @@ import { Stack } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/auth';
+import { font, palette, shared, spacing } from '../src/theme';
 
 type Mode = 'signIn' | 'signUp';
+
+function Input(props: React.ComponentProps<typeof TextInput>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      {...props}
+      style={[shared.input, focused && styles.inputFocused]}
+      placeholderTextColor={palette.dust}
+      onFocus={(e) => {
+        setFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        props.onBlur?.(e);
+      }}
+    />
+  );
+}
 
 export default function SignInScreen() {
   const { signIn, signUp } = useAuth();
@@ -30,8 +50,7 @@ export default function SignInScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'The Stacks' }} />
       <Text style={styles.title}>{mode === 'signIn' ? 'Sign in' : 'Create an account'}</Text>
-      <TextInput
-        style={styles.input}
+      <Input
         value={email}
         onChangeText={setEmail}
         placeholder="email"
@@ -40,8 +59,7 @@ export default function SignInScreen() {
         autoComplete="email"
         editable={!busy}
       />
-      <TextInput
-        style={styles.input}
+      <Input
         value={password}
         onChangeText={setPassword}
         placeholder="password"
@@ -51,15 +69,24 @@ export default function SignInScreen() {
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Pressable
-        style={[styles.button, busy && styles.buttonDisabled]}
+        style={({ pressed }) => [
+          shared.primaryBtn,
+          styles.button,
+          busy && styles.buttonDisabled,
+          pressed && !busy && styles.pressed,
+        ]}
         onPress={submit}
         disabled={busy || !email.trim() || !password}
       >
-        <Text style={styles.buttonText}>
+        <Text style={shared.primaryBtnText}>
           {busy ? 'Working…' : mode === 'signIn' ? 'Sign in' : 'Sign up'}
         </Text>
       </Pressable>
-      <Pressable onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')} disabled={busy}>
+      <Pressable
+        style={({ pressed }) => [styles.toggleWrap, pressed && styles.pressed]}
+        onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
+        disabled={busy}
+      >
         <Text style={styles.toggle}>
           {mode === 'signIn'
             ? 'No account yet? Sign up instead'
@@ -74,43 +101,50 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 12,
+    gap: spacing.md,
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
+    backgroundColor: palette.gloom,
   },
   title: {
-    fontSize: 24,
+    color: palette.paper,
+    fontFamily: font.family.serif,
+    fontSize: font.size.xl,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
-  input: {
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 12,
+  inputFocused: {
+    borderColor: palette.lamp,
   },
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
+    padding: spacing.md,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  toggleWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
   },
   toggle: {
-    color: '#2563eb',
+    color: palette.lamp,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
     textAlign: 'center',
   },
   error: {
-    color: '#dc2626',
+    color: palette.danger,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
   },
   note: {
-    color: '#64748b',
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
     textAlign: 'center',
   },
 });

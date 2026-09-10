@@ -5,11 +5,37 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import { useAuth } from '../src/auth';
 import { DEFAULT_NUDGE_TIME, readNudgeTime, writeNudgeTime, type NudgeTime } from '../src/nudgeTime';
 import { supabase } from '../src/supabase';
+import { font, palette, shared, spacing } from '../src/theme';
 
 const asInt = (value: string): number | null => {
   const n = Number.parseInt(value, 10);
   return Number.isFinite(n) ? n : null;
 };
+
+function TimeField({
+  label,
+  ...inputProps
+}: React.ComponentProps<typeof TextInput> & { label: string }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={shared.label}>{label}</Text>
+      <TextInput
+        {...inputProps}
+        style={[shared.input, focused && styles.inputFocused]}
+        placeholderTextColor={palette.dust}
+        onFocus={(e) => {
+          setFocused(true);
+          inputProps.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          inputProps.onBlur?.(e);
+        }}
+      />
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -66,37 +92,35 @@ export default function SettingsScreen() {
       <Stack.Screen options={{ title: 'Settings' }} />
       <Text style={styles.section}>Daily nudge</Text>
       <View style={styles.timeRow}>
-        <View style={styles.field}>
-          <Text style={styles.label}>Hour (0–23)</Text>
-          <TextInput
-            style={styles.input}
-            value={hour}
-            onChangeText={setHour}
-            keyboardType="number-pad"
-            placeholder="20"
-            editable={!busy}
-          />
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Minute (0–59)</Text>
-          <TextInput
-            style={styles.input}
-            value={minute}
-            onChangeText={setMinute}
-            keyboardType="number-pad"
-            placeholder="00"
-            editable={!busy}
-          />
-        </View>
+        <TimeField
+          label="Hour (0–23)"
+          value={hour}
+          onChangeText={setHour}
+          keyboardType="number-pad"
+          placeholder="20"
+          editable={!busy}
+        />
+        <TimeField
+          label="Minute (0–59)"
+          value={minute}
+          onChangeText={setMinute}
+          keyboardType="number-pad"
+          placeholder="00"
+          editable={!busy}
+        />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {message ? <Text style={styles.message}>{message}</Text> : null}
       <Pressable
-        style={[styles.button, busy && styles.buttonDisabled]}
+        style={({ pressed }) => [
+          shared.primaryBtn,
+          busy && styles.buttonDisabled,
+          pressed && !busy && styles.pressed,
+        ]}
         onPress={save}
         disabled={busy}
       >
-        <Text style={styles.buttonText}>Save nudge time</Text>
+        <Text style={shared.primaryBtnText}>Save nudge time</Text>
       </Pressable>
       <Text style={styles.note}>
         You get one nudge a day, and only on days you have not logged a session yet.
@@ -106,14 +130,22 @@ export default function SettingsScreen() {
 
       <Text style={styles.section}>Account</Text>
       <Pressable
-        style={[styles.button, busy && styles.buttonDisabled]}
+        style={({ pressed }) => [
+          shared.secondaryBtn,
+          busy && styles.buttonDisabled,
+          pressed && !busy && styles.pressed,
+        ]}
         onPress={() => void signOut()}
         disabled={busy}
       >
-        <Text style={styles.buttonText}>Sign out</Text>
+        <Text style={shared.secondaryBtnText}>Sign out</Text>
       </Pressable>
       <Pressable
-        style={[styles.dangerButton, busy && styles.buttonDisabled]}
+        style={({ pressed }) => [
+          shared.destructiveBtn,
+          busy && styles.buttonDisabled,
+          pressed && !busy && styles.pressed,
+        ]}
         onPress={() => {
           Alert.alert(
             'Delete account?',
@@ -144,7 +176,7 @@ export default function SettingsScreen() {
         }}
         disabled={busy}
       >
-        <Text style={styles.dangerButtonText}>Delete my account</Text>
+        <Text style={shared.destructiveBtnText}>Delete my account</Text>
       </Pressable>
       {message ? <Text style={styles.message}>{message}</Text> : null}
     </View>
@@ -154,71 +186,53 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    gap: 12,
-    padding: 16,
+    backgroundColor: palette.gloom,
+    gap: spacing.md,
+    padding: spacing.lg,
   },
   section: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    ...shared.sectionHeader,
+    borderTopColor: palette.oak,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
   },
   timeRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   field: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
-  label: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 12,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
+  inputFocused: {
+    borderColor: palette.lamp,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  dangerButton: {
-    alignItems: 'center',
-    borderColor: '#dc2626',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 14,
-  },
-  dangerButtonText: {
-    color: '#dc2626',
-    fontWeight: '600',
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   errorText: {
-    color: '#dc2626',
+    color: palette.danger,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
   },
   message: {
-    color: '#475569',
+    color: palette.paper,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
   },
   note: {
-    color: '#64748b',
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
   },
   divider: {
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: 1,
-    marginVertical: 8,
+    borderBottomColor: palette.oak,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
   },
 });

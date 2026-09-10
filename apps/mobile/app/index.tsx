@@ -1,7 +1,8 @@
 import { router, Stack, useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   SectionList,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 import type { BookStatus, UserBook } from '@stacks/domain';
 import { useLibrary } from '../src/library';
+import { font, palette, shared, spacing } from '../src/theme';
 
 const STATUS_ORDER: BookStatus[] = ['reading', 'want', 'finished', 'abandoned'];
 
@@ -17,6 +19,7 @@ type ShelfSection = { title: string; data: UserBook[] };
 
 export default function ShelfScreen() {
   const { books, userBooks, streak, loading, error, reload } = useLibrary();
+  const fade = useRef(new Animated.Value(0)).current;
 
   // Shelving a book or logging a sitting happens on another screen holding its
   // own copy of the library, so this one refetches whenever it comes back into
@@ -26,6 +29,11 @@ export default function ShelfScreen() {
       void reload();
     }, [reload]),
   );
+
+  useEffect(() => {
+    if (loading) return;
+    Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, [loading, fade]);
 
   const sections = useMemo<ShelfSection[]>(
     () =>
@@ -37,7 +45,8 @@ export default function ShelfScreen() {
   );
 
   const titleFor = (ub: UserBook) => books.find((b) => b.id === ub.bookId)?.title ?? 'Unknown title';
-  const authorFor = (ub: UserBook) => books.find((b) => b.id === ub.bookId)?.author ?? 'Unknown author';
+  const authorFor = (ub: UserBook) =>
+    books.find((b) => b.id === ub.bookId)?.author ?? 'Unknown author';
 
   if (error) {
     return (
@@ -45,8 +54,11 @@ export default function ShelfScreen() {
         <Stack.Screen options={{ title: 'The Stacks' }} />
         <Text style={styles.emptyTitle}>Could not load your library</Text>
         <Text style={styles.emptyText}>{error}</Text>
-        <Pressable style={styles.button} onPress={() => void reload()}>
-          <Text style={styles.buttonText}>Try again</Text>
+        <Pressable
+          style={({ pressed }) => [shared.primaryBtn, pressed && styles.pressed]}
+          onPress={() => void reload()}
+        >
+          <Text style={shared.primaryBtnText}>Try again</Text>
         </Pressable>
       </View>
     );
@@ -56,15 +68,21 @@ export default function ShelfScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: 'The Stacks' }} />
-        <Text style={styles.streak}>Streak: {streak} day{streak === 1 ? '' : 's'}</Text>
+        <Text style={styles.streakHero}>
+          {streak} day{streak === 1 ? '' : 's'}
+        </Text>
+        <Text style={styles.streakCaption}>reading streak</Text>
         <Text style={styles.emptyTitle}>Your shelves are empty</Text>
         <Text style={styles.emptyText}>
           Add a book from the Open Library and your stacks will grow here.
         </Text>
-        <Pressable style={styles.button} onPress={() => router.push('/add')}>
-          <Text style={styles.buttonText}>Add a book</Text>
+        <Pressable
+          style={({ pressed }) => [shared.primaryBtn, pressed && styles.pressed]}
+          onPress={() => router.push('/add')}
+        >
+          <Text style={shared.primaryBtnText}>Add a book</Text>
         </Pressable>
-        <Pressable onPress={() => router.push('/settings')}>
+        <Pressable style={({ pressed }) => pressed && styles.pressed} onPress={() => router.push('/settings')}>
           <Text style={styles.link}>Settings</Text>
         </Pressable>
       </View>
@@ -72,7 +90,7 @@ export default function ShelfScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fade }]}>
       <Stack.Screen options={{ title: 'The Stacks' }} />
       <SectionList
         sections={sections}
@@ -80,21 +98,37 @@ export default function ShelfScreen() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.streak}>Streak: {streak} day{streak === 1 ? '' : 's'}</Text>
+            <Text style={styles.streakHero}>
+              {streak} day{streak === 1 ? '' : 's'}
+            </Text>
+            <Text style={styles.streakCaption}>reading streak</Text>
             <View style={styles.headerRow}>
-              <Pressable style={styles.button} onPress={() => router.push('/add')}>
-                <Text style={styles.buttonText}>Add a book</Text>
+              <Pressable
+                style={({ pressed }) => [shared.primaryBtn, pressed && styles.pressed]}
+                onPress={() => router.push('/add')}
+              >
+                <Text style={shared.primaryBtnText}>Add a book</Text>
               </Pressable>
-              <Pressable onPress={() => router.push('/settings')}>
-                <Text style={styles.link}>Settings</Text>
+              <Pressable
+                style={({ pressed }) => [shared.secondaryBtn, pressed && styles.pressed]}
+                onPress={() => router.push('/settings')}
+              >
+                <Text style={shared.secondaryBtnText}>Settings</Text>
               </Pressable>
             </View>
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => router.push(`/book/${item.id}`)}>
-            <Text style={styles.rowTitle}>{titleFor(item)}</Text>
-            <Text style={styles.rowAuthor}>{authorFor(item)}</Text>
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+            onPress={() => router.push(`/book/${item.id}`)}
+          >
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {titleFor(item)}
+            </Text>
+            <Text style={styles.rowAuthor} numberOfLines={1}>
+              {authorFor(item)}
+            </Text>
           </Pressable>
         )}
         renderSectionHeader={({ section }) => (
@@ -103,86 +137,103 @@ export default function ShelfScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" />
+              <ActivityIndicator size="large" color={palette.lamp} />
             </View>
           ) : (
             <Text style={styles.emptyText}>The shelves are empty.</Text>
           )
         }
       />
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: palette.gloom,
   },
   center: {
     flex: 1,
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
+    backgroundColor: palette.gloom,
   },
   header: {
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 16,
+    gap: spacing.md,
+    marginTop: spacing.sm,
   },
-  streak: {
-    fontSize: 20,
+  streakHero: {
+    color: palette.lamp,
+    fontFamily: font.family.serif,
+    fontSize: font.size.hero,
     fontWeight: '600',
   },
+  streakCaption: {
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
   emptyTitle: {
-    fontSize: 22,
+    color: palette.paper,
+    fontFamily: font.family.serif,
+    fontSize: font.size.xl,
     fontWeight: '600',
     textAlign: 'center',
   },
   emptyText: {
-    color: '#64748b',
+    color: palette.dust,
+    fontFamily: font.family.mono,
     textAlign: 'center',
   },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   link: {
-    color: '#2563eb',
+    color: palette.lamp,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+    padding: spacing.sm,
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  rowPressed: {
+    backgroundColor: palette.ink,
+    transform: [{ scale: 0.99 }],
   },
   sectionHeader: {
-    backgroundColor: '#f1f5f9',
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    textTransform: 'capitalize',
+    ...shared.sectionHeader,
+    borderTopColor: palette.oak,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
   },
   row: {
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: 1,
-    padding: 16,
+    borderBottomColor: palette.oak,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
   rowTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    color: palette.paper,
+    fontFamily: font.family.serif,
+    fontSize: font.size.lg,
+    fontWeight: '600',
   },
   rowAuthor: {
-    color: '#64748b',
-    marginTop: 2,
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+    marginTop: spacing.xs,
   },
 });

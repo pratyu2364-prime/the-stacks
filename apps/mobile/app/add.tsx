@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { searchBooks, type SearchHit } from '@stacks/data';
 import { useLibrary } from '../src/library';
+import { font, palette, shared, spacing } from '../src/theme';
 
 export default function AddScreen() {
   const { addBook } = useLibrary();
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [shelvingId, setShelvingId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -66,25 +68,30 @@ export default function AddScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Add a book' }} />
-      <TextInput
-        style={styles.input}
-        value={query}
-        onChangeText={setQuery}
-        placeholder="title or author"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={[shared.input, focused && styles.inputFocused]}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="title or author"
+          placeholderTextColor={palette.dust}
+          autoCapitalize="none"
+          autoCorrect={false}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+      </View>
 
       {networkError && <Text style={styles.error}>{networkError}</Text>}
 
-      {searching && <ActivityIndicator style={styles.spinner} />}
+      {searching && <ActivityIndicator style={styles.spinner} color={palette.lamp} />}
 
       <FlatList
         data={hits}
         keyExtractor={(item) => item.olWorkKey}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.row}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={() => void shelve(item)}
             disabled={shelvingId !== null}
           >
@@ -95,7 +102,7 @@ export default function AddScreen() {
               {item.author}
             </Text>
             {shelvingId === item.olWorkKey && (
-              <ActivityIndicator style={styles.rowSpinner} />
+              <ActivityIndicator style={styles.rowSpinner} color={palette.lamp} />
             )}
           </Pressable>
         )}
@@ -110,30 +117,54 @@ export default function AddScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  input: {
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: 1,
-    fontSize: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  container: {
+    flex: 1,
+    backgroundColor: palette.gloom,
+  },
+  searchWrap: {
+    padding: spacing.lg,
+  },
+  inputFocused: {
+    borderColor: palette.lamp,
   },
   error: {
-    color: '#dc2626',
-    fontSize: 14,
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    color: palette.danger,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
-  spinner: { marginTop: 16 },
+  spinner: { marginTop: spacing.md },
   row: {
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    borderBottomColor: palette.oak,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
   },
-  rowTitle: { flex: 1, fontSize: 16, fontWeight: '500' },
-  rowAuthor: { color: '#64748b', flexShrink: 1, marginLeft: 8 },
-  rowSpinner: { marginLeft: 8 },
-  empty: { color: '#64748b', padding: 16, textAlign: 'center' },
+  rowPressed: {
+    backgroundColor: palette.ink,
+  },
+  rowTitle: {
+    color: palette.paper,
+    flex: 1,
+    fontFamily: font.family.serif,
+    fontSize: font.size.lg,
+    fontWeight: '600',
+  },
+  rowAuthor: {
+    color: palette.dust,
+    flexShrink: 1,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+    marginLeft: spacing.sm,
+  },
+  rowSpinner: { marginLeft: spacing.sm },
+  empty: {
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    padding: spacing.lg,
+    textAlign: 'center',
+  },
 });

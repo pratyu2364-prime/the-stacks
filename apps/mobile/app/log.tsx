@@ -4,11 +4,38 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { dayKey } from '@stacks/domain';
 import { outbox } from '../src/db';
+import { font, palette, shared, spacing } from '../src/theme';
 
 const asNumber = (value: string): number | null => {
   const n = Number.parseInt(value, 10);
   return Number.isFinite(n) ? n : null;
 };
+
+function Field({
+  label,
+  style,
+  ...inputProps
+}: React.ComponentProps<typeof TextInput> & { label: string }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={shared.label}>{label}</Text>
+      <TextInput
+        {...inputProps}
+        style={[shared.input, focused && styles.inputFocused, style]}
+        placeholderTextColor={palette.dust}
+        onFocus={(e) => {
+          setFocused(true);
+          inputProps.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          inputProps.onBlur?.(e);
+        }}
+      />
+    </View>
+  );
+}
 
 export default function LogScreen() {
   const { userBookId } = useLocalSearchParams<{ userBookId: string }>();
@@ -41,53 +68,48 @@ export default function LogScreen() {
       <Stack.Screen options={{ title: 'Log a session' }} />
       <ScrollView contentContainerStyle={styles.form}>
         <View style={styles.row}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Pages from</Text>
-            <TextInput
-              style={styles.input}
-              value={pageStart}
-              onChangeText={setPageStart}
-              keyboardType="number-pad"
-              placeholder="1"
-            />
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.label}>Pages to</Text>
-            <TextInput
-              style={styles.input}
-              value={pageEnd}
-              onChangeText={setPageEnd}
-              keyboardType="number-pad"
-              placeholder="20"
-            />
-          </View>
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Minutes</Text>
-          <TextInput
-            style={styles.input}
-            value={minutes}
-            onChangeText={setMinutes}
+          <Field
+            label="Pages from"
+            value={pageStart}
+            onChangeText={setPageStart}
             keyboardType="number-pad"
-            placeholder="30"
+            placeholder="1"
+          />
+          <Field
+            label="Pages to"
+            value={pageEnd}
+            onChangeText={setPageEnd}
+            keyboardType="number-pad"
+            placeholder="20"
           />
         </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Mood</Text>
-          <TextInput style={styles.input} value={mood} onChangeText={setMood} placeholder="focused" />
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.label}>Note</Text>
-          <TextInput
-            style={[styles.input, styles.noteInput]}
-            value={note}
-            onChangeText={setNote}
-            placeholder="What did you think?"
-            multiline
-          />
-        </View>
-        <Pressable style={[styles.button, busy && styles.buttonDisabled]} onPress={save} disabled={busy}>
-          <Text style={styles.buttonText}>Save session</Text>
+        <Field
+          label="Minutes"
+          value={minutes}
+          onChangeText={setMinutes}
+          keyboardType="number-pad"
+          placeholder="30"
+        />
+        <Field label="Mood" value={mood} onChangeText={setMood} placeholder="focused" />
+        <Field
+          label="Note"
+          value={note}
+          onChangeText={setNote}
+          placeholder="What did you think?"
+          multiline
+          style={[styles.noteInput]}
+        />
+        <Pressable
+          style={({ pressed }) => [
+            shared.primaryBtn,
+            styles.button,
+            busy && styles.buttonDisabled,
+            pressed && !busy && styles.pressed,
+          ]}
+          onPress={save}
+          disabled={busy}
+        >
+          <Text style={shared.primaryBtnText}>Save session</Text>
         </Pressable>
         <Text style={styles.note}>Saved locally first — it syncs when you are back online.</Text>
       </ScrollView>
@@ -98,51 +120,41 @@ export default function LogScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: palette.gloom,
   },
   form: {
-    gap: 12,
-    padding: 16,
+    gap: spacing.md,
+    padding: spacing.lg,
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   field: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
-  label: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  input: {
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 12,
+  inputFocused: {
+    borderColor: palette.lamp,
   },
   noteInput: {
     minHeight: 80,
     textAlignVertical: 'top',
   },
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    marginTop: 8,
-    padding: 14,
+    marginTop: spacing.sm,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   note: {
-    color: '#64748b',
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
     textAlign: 'center',
   },
 });

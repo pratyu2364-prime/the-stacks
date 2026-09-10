@@ -1,7 +1,8 @@
 import { router, Stack, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, AppState, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
 import { loadLibrary } from '@stacks/data';
 import type { Session, UserBook } from '@stacks/domain';
 import { AuthProvider, useAuth } from '../src/auth';
@@ -9,6 +10,15 @@ import { outbox } from '../src/db';
 import { syncNudge } from '../src/nudge';
 import { readNudgeTime } from '../src/nudgeTime';
 import { supabase } from '../src/supabase';
+import { font, palette } from '../src/theme';
+
+const screenOptions = {
+  headerStyle: { backgroundColor: palette.gloom },
+  headerTintColor: palette.paper,
+  headerTitleStyle: { fontFamily: font.family.serif, fontSize: font.size.lg },
+  contentStyle: { backgroundColor: palette.gloom },
+  headerShadowVisible: false,
+};
 
 function mostRecentlyReadReadingBook(userBooks: UserBook[], sessions: Session[]): string | null {
   const reading = userBooks.filter((ub) => ub.status === 'reading');
@@ -84,41 +94,61 @@ function Gate() {
   }, [loading, signedIn, onSignIn]);
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack />
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      <Stack screenOptions={screenOptions} />
       {error && !loading ? (
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: 12,
-            backgroundColor: '#4a1d1d',
-          }}
-        >
-          <Text style={{ color: '#f6e5e5', fontSize: 12 }}>{error}</Text>
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
       {loading ? (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#faf7f2',
-          }}
-        >
-          <ActivityIndicator size="large" />
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={palette.lamp} />
+          <Text style={styles.loadingText}>Loading your stacks…</Text>
         </View>
       ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: palette.gloom,
+  },
+  errorBanner: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 12,
+    backgroundColor: palette.ink,
+    borderTopColor: palette.danger,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  errorText: {
+    color: palette.danger,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
+  },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: palette.gloom,
+  },
+  loadingText: {
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+  },
+});
 
 export default function RootLayout() {
   return (

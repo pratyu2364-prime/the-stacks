@@ -1,11 +1,21 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useLibrary } from '../../src/library';
+import { font, palette, shared, spacing } from '../../src/theme';
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { books, userBooks, sessions, loading, reload } = useLibrary();
+  const fade = useRef(new Animated.Value(0)).current;
 
   // The log sheet writes through its own copy of the library, so this screen
   // refetches on focus to show the sitting that was just logged.
@@ -14,6 +24,11 @@ export default function BookScreen() {
       void reload();
     }, [reload]),
   );
+
+  useEffect(() => {
+    if (loading) return;
+    Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, [loading, fade]);
 
   const userBook = userBooks.find((ub) => ub.id === id);
   const book = userBook ? books.find((b) => b.id === userBook.bookId) : undefined;
@@ -29,7 +44,7 @@ export default function BookScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={palette.lamp} />
       </View>
     );
   }
@@ -44,7 +59,7 @@ export default function BookScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fade }]}>
       <Stack.Screen options={{ title: book?.title ?? 'Book' }} />
       <FlatList
         data={bookSessions}
@@ -54,8 +69,11 @@ export default function BookScreen() {
             <Text style={styles.title}>{book?.title ?? 'Unknown title'}</Text>
             <Text style={styles.author}>{book?.author ?? 'Unknown author'}</Text>
             <Text style={styles.status}>{userBook.status}</Text>
-            <Pressable style={styles.logButton} onPress={() => router.push(`/log?userBookId=${userBook.id}`)}>
-              <Text style={styles.logButtonText}>Log a session</Text>
+            <Pressable
+              style={({ pressed }) => [shared.primaryBtn, styles.logButton, pressed && styles.pressed]}
+              onPress={() => router.push(`/log?userBookId=${userBook.id}`)}
+            >
+              <Text style={shared.primaryBtnText}>Log a session</Text>
             </Pressable>
             <Text style={styles.sectionHeader}>Sessions</Text>
           </View>
@@ -72,75 +90,84 @@ export default function BookScreen() {
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No sessions for this book yet.</Text>}
       />
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: palette.gloom,
   },
   center: {
     flex: 1,
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
+    backgroundColor: palette.gloom,
   },
   header: {
-    padding: 16,
+    padding: spacing.lg,
   },
   title: {
-    fontSize: 24,
+    color: palette.paper,
+    fontFamily: font.family.serif,
+    fontSize: font.size.xl,
     fontWeight: '600',
   },
   author: {
-    color: '#64748b',
-    fontSize: 16,
-    marginTop: 2,
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.md,
+    marginTop: spacing.xs,
   },
   status: {
-    color: '#2563eb',
+    alignSelf: 'flex-start',
+    color: palette.lamp,
+    fontFamily: font.family.mono,
+    fontSize: font.size.xs,
     fontWeight: '600',
-    marginTop: 8,
-    textTransform: 'capitalize',
-  },
-  logButton: {
-    alignItems: 'center',
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    marginTop: 16,
-    paddingVertical: 14,
-  },
-  logButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  sectionHeader: {
-    color: '#475569',
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 24,
+    letterSpacing: 2,
+    marginTop: spacing.md,
     textTransform: 'uppercase',
   },
+  logButton: {
+    marginTop: spacing.lg,
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  sectionHeader: {
+    ...shared.sectionHeader,
+    borderTopColor: palette.oak,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: spacing.xl,
+    paddingTop: spacing.md,
+  },
   sessionRow: {
-    borderBottomColor: '#e2e8f0',
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderBottomColor: palette.oak,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   sessionDate: {
-    fontSize: 16,
-    fontWeight: '500',
+    color: palette.paper,
+    fontFamily: font.family.serif,
+    fontSize: font.size.md,
+    fontWeight: '600',
   },
   sessionDetail: {
-    color: '#64748b',
-    marginTop: 2,
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    fontSize: font.size.sm,
+    marginTop: spacing.xs,
   },
   emptyText: {
-    color: '#64748b',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    color: palette.dust,
+    fontFamily: font.family.mono,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
 });
