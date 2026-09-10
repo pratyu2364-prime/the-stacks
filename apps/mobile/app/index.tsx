@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import type { BookStatus, UserBook } from '@stacks/domain';
 import { useLibrary } from '../src/library';
+import { Cover } from '../src/Cover';
 import { font, palette, shared, spacing } from '../src/theme';
 
 const STATUS_ORDER: BookStatus[] = ['reading', 'want', 'finished', 'abandoned'];
@@ -123,12 +124,15 @@ export default function ShelfScreen() {
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={() => router.push(`/book/${item.id}`)}
           >
-            <Text style={styles.rowTitle} numberOfLines={1}>
-              {titleFor(item)}
-            </Text>
-            <Text style={styles.rowAuthor} numberOfLines={1}>
-              {authorFor(item)}
-            </Text>
+            <Cover coverId={books.find((b) => b.id === item.bookId)?.coverId ?? null} title={titleFor(item)} />
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {titleFor(item)}
+              </Text>
+              <Text style={styles.rowAuthor} numberOfLines={1}>
+                {authorFor(item)}
+              </Text>
+            </View>
           </Pressable>
         )}
         renderSectionHeader={({ section }) => (
@@ -219,10 +223,17 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   row: {
+    alignItems: 'center',
     borderBottomColor: palette.oak,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    gap: spacing.md,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.lg,
+  },
+  rowText: {
+    flex: 1,
+    minWidth: 0,
   },
   rowTitle: {
     color: palette.paper,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { addBook as dataAddBook, loadLibrary, type NewBook, type SearchHit } from '@stacks/data';
+import { addBook as dataAddBook, loadLibrary, removeBook as dataRemoveBook, type NewBook, type SearchHit } from '@stacks/data';
 import { currentStreak, type Book, type BookStatus, type Session, type UserBook } from '@stacks/domain';
 import { supabase } from './supabase';
 
@@ -12,6 +12,7 @@ type LibraryValue = {
   error: string | null;
   reload(): Promise<void>;
   addBook(hit: SearchHit, status?: BookStatus): Promise<void>;
+  removeBook(userBookId: string): Promise<void>;
 };
 
 export function useLibrary(): LibraryValue {
@@ -55,6 +56,14 @@ export function useLibrary(): LibraryValue {
     [reload],
   );
 
+  const removeBookById = useCallback(
+    async (userBookId: string) => {
+      await dataRemoveBook(supabase, userBookId);
+      await reload();
+    },
+    [reload],
+  );
+
   return {
     books,
     userBooks,
@@ -64,5 +73,6 @@ export function useLibrary(): LibraryValue {
     error,
     reload,
     addBook: shelvedAddBook,
+    removeBook: removeBookById,
   };
 }

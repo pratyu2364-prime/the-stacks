@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { Book, Session, UserBook } from '@stacks/domain';
 import { dayKey } from '@stacks/domain';
-import { coverUrl, loadLibrary, logSession, setStatus } from '@stacks/data';
+import { coverUrl, loadLibrary, logSession, removeBook, setStatus } from '@stacks/data';
 import { supabase } from '../../supabase';
 import { Shell } from '../components/Shell';
 
 export function BookDetail() {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const [book, setBook] = useState<Book | null>(null);
   const [userBook, setUserBook] = useState<UserBook | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -64,6 +65,23 @@ export function BookDetail() {
               </button>
             ))}
           </div>
+          <button
+            onClick={() => {
+              const sittingCount = sessions.length;
+              const msg = sittingCount > 0
+                ? `Remove "${book.title}"? This also deletes the ${sittingCount} sitting${sittingCount === 1 ? '' : 's'} you logged for it.`
+                : `Remove "${book.title}" from your shelves?`;
+              if (!window.confirm(msg)) return;
+              removeBook(supabase, userBook.id)
+                .then(() => navigate('/books'))
+                .catch((e: Error) => {
+                  setError(e.message);
+                });
+            }}
+            className="mt-3 px-2.5 py-1 rounded border border-red-400/50 text-red-300 text-[11px] uppercase tracking-widest"
+          >
+            remove
+          </button>
         </div>
       </div>
 

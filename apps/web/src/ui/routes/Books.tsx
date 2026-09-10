@@ -7,6 +7,17 @@ import { Shell } from '../components/Shell';
 
 type Row = { userBook: UserBook; book: Book };
 
+/**
+ * An aborted request is not a failure in any client. Web throws AbortError;
+ * React Native can surface a TypeError with "Abort" inside its message — so
+ * match on the message, not the name.
+ */
+function isAbortError(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  if (e.name === 'AbortError') return true;
+  return e.message.toLowerCase().includes('abort');
+}
+
 export function Books() {
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<'all' | UserBook['status']>('all');
@@ -87,6 +98,9 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
   const [searching, setSearching] = useState(false);
   const [pending, setPending] = useState<SearchHit | null>(null);
   const abort = useRef<AbortController | null>(null);
+  // Monotone request id: a result is only worth keeping if it belongs to the
+  // latest query. Superseded requests vanish silently no matter what settles.
+  const seq = useRef(0);
 
   const byHand = () =>
     setPending({
@@ -101,22 +115,28 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
 
   useEffect(() => {
     abort.current?.abort();
+    const mine = ++seq.current;
     if (query.trim().length < 2) {
       setHits([]);
+      setFailed(false);
+      setSearching(false);
       return;
     }
     const controller = new AbortController();
     abort.current = controller;
     setSearching(true);
+    setFailed(false);
     const timer = window.setTimeout(() => {
       searchBooks(query, controller.signal)
         .then((results) => {
+          if (mine !== seq.current) return;
           setHits(results);
           setFailed(false);
           setSearching(false);
         })
-        .catch((e: Error) => {
-          if (e.name === 'AbortError') return;
+        .catch((e: unknown) => {
+          if (mine !== seq.current) return;
+          if (isAbortError(e)) return;
           setFailed(true);
           setSearching(false);
         });
@@ -143,7 +163,9 @@ function AddBook({ onAdded }: { onAdded: () => void }) {
         answers with nothing, or with the wrong things, the way out must be on
         screen — not hidden behind their API failing.
       */}
-      {failed && <p className="mt-3 text-xs text-red-300">Open Library did not answer.</p>}
+      {failed && !searching && <p className="mt-3 text-xs text-red-300">Open Library did not answer.</p>}
+
+      {searching && <p className="mt-3 text-xs text-dust">searching…</p>}
 
       {query.trim().length >= 2 && !searching && (
         <p className="mt-3 text-xs text-dust">

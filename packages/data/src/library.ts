@@ -184,3 +184,8 @@ export async function setStatus(
   const { error } = await client.from('user_books').update({ status, finished_at }).eq('id', userBookId);
   if (error) throw new Error(error.message);
 }
+
+export async function removeBook(client: SupabaseClient, userBookId: string): Promise<void> {
+  const { error } = await client.from('user_books').delete().eq('id', userBookId);
+  if (error) throw new Error(error.message);
+}

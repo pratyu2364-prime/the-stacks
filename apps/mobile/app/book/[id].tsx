@@ -2,6 +2,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   FlatList,
   Pressable,
@@ -10,11 +11,12 @@ import {
   View,
 } from 'react-native';
 import { useLibrary } from '../../src/library';
+import { Cover } from '../../src/Cover';
 import { font, palette, shared, spacing } from '../../src/theme';
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { books, userBooks, sessions, loading, reload } = useLibrary();
+  const { books, userBooks, sessions, loading, reload, removeBook } = useLibrary();
   const fade = useRef(new Animated.Value(0)).current;
 
   // The log sheet writes through its own copy of the library, so this screen
@@ -66,14 +68,44 @@ export default function BookScreen() {
         keyExtractor={(s) => s.id}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>{book?.title ?? 'Unknown title'}</Text>
-            <Text style={styles.author}>{book?.author ?? 'Unknown author'}</Text>
+            <View style={styles.headerTop}>
+              <Cover coverId={book?.coverId ?? null} title={book?.title ?? '?'} size="M" />
+              <View style={styles.headerText}>
+                <Text style={styles.title}>{book?.title ?? 'Unknown title'}</Text>
+                <Text style={styles.author}>{book?.author ?? 'Unknown author'}</Text>
+              </View>
+            </View>
             <Text style={styles.status}>{userBook.status}</Text>
             <Pressable
               style={({ pressed }) => [shared.primaryBtn, styles.logButton, pressed && styles.pressed]}
               onPress={() => router.push(`/log?userBookId=${userBook.id}`)}
             >
               <Text style={shared.primaryBtnText}>Log a session</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [shared.destructiveBtn, styles.removeButton, pressed && styles.pressed]}
+              onPress={() => {
+                const name = book?.title ?? 'This book';
+                const sittingCount = bookSessions.length;
+                const message =
+                  sittingCount > 0
+                    ? `Remove "${name}"? This also deletes the ${sittingCount} sitting${sittingCount === 1 ? '' : 's'} you logged for it.`
+                    : `Remove "${name}" from your shelves?`;
+                Alert.alert('Remove book', message, [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Remove',
+                    style: 'destructive',
+                    onPress: () => {
+                      removeBook(userBook.id)
+                        .then(() => router.replace('/'))
+                        .catch((e: Error) => Alert.alert('Could not remove it', e.message));
+                    },
+                  },
+                ]);
+              }}
+            >
+              <Text style={shared.destructiveBtnText}>Remove</Text>
             </Pressable>
             <Text style={styles.sectionHeader}>Sessions</Text>
           </View>
@@ -110,6 +142,14 @@ const styles = StyleSheet.create({
   header: {
     padding: spacing.lg,
   },
+  headerTop: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.lg,
+  },
+  headerText: {
+    flex: 1,
+  },
   title: {
     color: palette.paper,
     fontFamily: font.family.serif,
@@ -134,6 +174,9 @@ const styles = StyleSheet.create({
   },
   logButton: {
     marginTop: spacing.lg,
+  },
+  removeButton: {
+    marginTop: spacing.md,
   },
   pressed: {
     opacity: 0.85,

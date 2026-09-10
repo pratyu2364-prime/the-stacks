@@ -19,18 +19,27 @@ const afterAdd = {
   sessions: initialLoad.sessions,
 };
 
+const afterRemove = {
+  books: initialLoad.books,
+  userBooks: [],
+  sessions: [],
+};
+
 const mockAddBook = jest.fn(async () => afterAdd);
 const mockLoadLibrary = jest.fn(async () => initialLoad);
+const mockRemoveBook = jest.fn(async () => undefined);
 
 jest.mock('@stacks/data', () => ({
   get addBook() { return mockAddBook; },
   get loadLibrary() { return mockLoadLibrary; },
+  get removeBook() { return mockRemoveBook; },
 }));
 jest.mock('./supabase', () => ({ supabase: {} }));
 
 beforeEach(() => {
   mockAddBook.mockClear();
   mockLoadLibrary.mockClear();
+  mockRemoveBook.mockClear();
   mockLoadLibrary.mockResolvedValue(initialLoad);
 });
 
@@ -69,4 +78,20 @@ it('addBook calls the data layer then reloads the shelf', async () => {
 
   await waitFor(() => expect(result.current.userBooks).toHaveLength(2));
   expect(result.current.books[1].title).toBe('Neuromancer');
+});
+
+it('removeBook calls the data layer then reloads the shelf', async () => {
+  const { result } = renderHook(() => useLibrary());
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.userBooks).toHaveLength(1);
+
+  mockLoadLibrary.mockResolvedValue(afterRemove);
+
+  await result.current.removeBook('ub1');
+
+  expect(mockRemoveBook).toHaveBeenCalledTimes(1);
+  expect(mockRemoveBook).toHaveBeenCalledWith(expect.anything(), 'ub1');
+
+  await waitFor(() => expect(result.current.userBooks).toHaveLength(0));
+  expect(result.current.sessions).toHaveLength(0);
 });
