@@ -34,16 +34,16 @@ jobs:
       # The anon key is public by design: it ships in the bundle and RLS is what
       # keeps one reader out of another's library. The service-role key is never
       # used by this project and must never reach this workflow.
-      - run: pnpm build
+      - run: pnpm --filter @stacks/web build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       # Pages serves 404.html for unknown paths; the SPA boots from it and the
       # router takes over, so deep links survive a hard refresh.
-      - run: cp dist/index.html dist/404.html
+      - run: cp apps/web/dist/index.html apps/web/dist/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/web/dist
       - id: deploy
         uses: actions/deploy-pages@v4

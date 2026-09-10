@@ -1,2 +1,14 @@
+# Metro (React Native) resolves modules by walking real directories and does not
+# understand pnpm's symlinked, strictly-isolated node_modules: expo-router's own
+# peers came out unresolvable and nothing could bundle. A hoisted layout is what
+# the React Native toolchain expects.
+nodeLinker: hoisted
+
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
 allowBuilds:
   esbuild: true
+  '@parcel/watcher': true
+  unrs-resolver: true

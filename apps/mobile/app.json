@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "The Stacks",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0705"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "extra": {
+      "supabaseUrl": "https://ntgdyhsezcfiakujbgdd.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50Z2R5aHNlemNmaWFrdWpiZ2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTM0ODIsImV4cCI6MjEwNDUyOTQ4Mn0.BbADgSAXyRTeXxyj69VoaWkuy52p2fu0NJe4hGH55FM",
+      "router": {},
+      "eas": {
+        "projectId": "1227c81b-21ed-4e80-a3df-52cf06b6276d"
+      }
+    },
+    "scheme": "thestacks",
+    "android": {
+      "package": "app.thestacks.companion",
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0705",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 5
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite"
+    ],
+    "owner": "pratyu2364"
+  }
+}
