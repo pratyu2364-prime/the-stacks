@@ -1,7 +1,7 @@
 import { router, Stack, useSegments } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
-import { ActivityIndicator, AppState, View } from 'react-native';
+import { ActivityIndicator, AppState, Text, View } from 'react-native';
 import { loadLibrary } from '@stacks/data';
 import type { Session, UserBook } from '@stacks/domain';
 import { AuthProvider, useAuth } from '../src/auth';
@@ -28,7 +28,7 @@ function mostRecentlyReadReadingBook(userBooks: UserBook[], sessions: Session[])
 }
 
 function Gate() {
-  const { session, loading } = useAuth();
+  const { session, loading, error } = useAuth();
   const signedIn = session != null;
   const segments = useSegments();
 
@@ -86,6 +86,20 @@ function Gate() {
   return (
     <View style={{ flex: 1 }}>
       <Stack />
+      {error && !loading ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            padding: 12,
+            backgroundColor: '#4a1d1d',
+          }}
+        >
+          <Text style={{ color: '#f6e5e5', fontSize: 12 }}>{error}</Text>
+        </View>
+      ) : null}
       {loading ? (
         <View
           style={{
